@@ -36,8 +36,8 @@ internal sealed record MediaSnapshot(
     public TimeSpan PositionNow => Timeline.Extrapolate(Position, PositionReportedAt, DateTimeOffset.Now, IsPlaying, Rate, Duration);
 }
 
-/// <summary>A player known to Windows, for the "Source" menu of the widget.</summary>
-internal sealed record MediaSource(string Id, string AppName, string Title, bool IsPlaying, bool IsCurrent);
+/// <summary>A player known to Windows, for the "Source" menu of the widget and the Sources page.</summary>
+internal sealed record MediaSource(string Id, string AppId, string AppName, string Title, bool IsPlaying, bool IsCurrent);
 
 /// <summary>
 /// The media sessions of Windows (the players listed in the volume flyout: Spotify, the browsers, Media Player…):
@@ -50,6 +50,7 @@ internal sealed class MediaSessions
     private readonly SourcePicker _picker = new();
     private readonly Dictionary<string, Tracked> _tracked = [];
     private MediaManager? _manager;
+    private int _coverRevisions;
 
     private sealed class Tracked(string id, MediaSession session)
     {
@@ -75,9 +76,23 @@ internal sealed class MediaSessions
     /// <summary>The track, its cover, the playback state or the position changed (on the UI thread).</summary>
     public event EventHandler? Changed;
 
-    public IReadOnlyList<MediaSource> Sources =>
-        [.. _tracked.Values.Select(t => new MediaSource(t.Id, AppIdentity.FriendlyName(t.Session.SourceAppUserModelId),
-            t.Title, _picker.IsPlaying(t.Id), t.Id == _picker.Current))];
+    /// <summary>The players offered in the menu of the widgets (not those hidden on the Sources page).</summary>
+    public IReadOnlyList<MediaSource> Sources => [.. Players.Where(s => !_picker.IsHidden(s.Id))];
+
+    /// <summary>All the players known to Windows now.</summary>
+    public IReadOnlyList<MediaSource> Players =>
+        [.. _tracked.Values.Select(t =>
+        {
+            string appId = t.Session.SourceAppUserModelId ?? "";
+            return new MediaSource(t.Id, appId, AppNames.Of(appId), t.Title, _picker.IsPlaying(t.Id), t.Id == _picker.Current);
+        })];
+
+    /// <summary>The rules of the Sources page changed.</summary>
+    public void SetPolicy(SourcePolicy policy)
+    {
+        if (_picker.SetPolicy(policy))
+            Publish();
+    }
 
     public async Task StartAsync()
     {
@@ -281,7 +296,9 @@ internal sealed class MediaSessions
             t.CoverBytes = bytes;
             t.CoverType = type;
             (t.Cover, t.CoverColor) = Decode(bytes);
-            t.CoverRevision++;
+            // Counted over all the players: the overlay asks for /cover?r=…, the same address for another player's cover
+            // would keep the old picture.
+            t.CoverRevision = ++_coverRevisions;
         }
         if (t.Id == _picker.Current)
             Publish();
@@ -347,7 +364,7 @@ internal sealed class MediaSessions
             Debug.WriteLine($"Playback info failed: {ex.Message}");
         }
         string appId = t.Session.SourceAppUserModelId ?? "";
-        return new MediaSnapshot(t.Id, appId, AppIdentity.FriendlyName(appId), t.Title, t.Artist, t.Album,
+        return new MediaSnapshot(t.Id, appId, AppNames.Of(appId), t.Title, t.Artist, t.Album,
             t.Cover, t.CoverBytes, t.CoverType, t.CoverRevision, t.CoverColor,
             playing, position, reportedAt, duration < TimeSpan.Zero ? TimeSpan.Zero : duration, rate,
             canPlayPause, canNext, canPrevious, canSeek && duration > TimeSpan.Zero);

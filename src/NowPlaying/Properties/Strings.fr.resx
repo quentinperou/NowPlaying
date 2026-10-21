@@ -25,6 +25,9 @@
   <data name="Apply" xml:space="preserve">
     <value>Appliquer</value>
   </data>
+  <data name="BrowsersOneTab" xml:space="preserve">
+    <value>Un navigateur ne donne à Windows qu&apos;un onglet à la fois : pour suivre deux lectures, utilisez deux navigateurs (ou l&apos;application du service).</value>
+  </data>
   <data name="ButtonNext" xml:space="preserve">
     <value>Suivant</value>
   </data>
@@ -163,6 +166,12 @@
   <data name="MenuSource" xml:space="preserve">
     <value>Source</value>
   </data>
+  <data name="NoPlayers" xml:space="preserve">
+    <value>Aucun lecteur vu pour l&apos;instant</value>
+  </data>
+  <data name="NoPlayersHint" xml:space="preserve">
+    <value>Lancez une lecture : son lecteur s&apos;ajoute ici</value>
+  </data>
   <data name="NothingPlaying" xml:space="preserve">
     <value>Rien en lecture</value>
   </data>
@@ -223,17 +232,62 @@
   <data name="PageOverlay" xml:space="preserve">
     <value>Overlay OBS</value>
   </data>
+  <data name="PageSources" xml:space="preserve">
+    <value>Sources</value>
+  </data>
   <data name="PageUpdates" xml:space="preserve">
     <value>Mises à jour</value>
   </data>
   <data name="PageWidget" xml:space="preserve">
     <value>Barre des tâches</value>
   </data>
+  <data name="PinMode" xml:space="preserve">
+    <value>Lecteur choisi au clic droit</value>
+  </data>
+  <data name="PinModeHint" xml:space="preserve">
+    <value>Combien de temps il reste affiché une fois choisi dans le menu du widget</value>
+  </data>
+  <data name="PinModeUntilChanged" xml:space="preserve">
+    <value>Jusqu&apos;à ce que j&apos;en choisisse un autre</value>
+  </data>
+  <data name="PinModeUntilNextStart" xml:space="preserve">
+    <value>Jusqu&apos;au lancement d&apos;un autre lecteur</value>
+  </data>
+  <data name="PlayerDown" xml:space="preserve">
+    <value>Descendre {0}</value>
+  </data>
+  <data name="PlayerHidden" xml:space="preserve">
+    <value>Jamais affiché</value>
+  </data>
+  <data name="PlayerPaused" xml:space="preserve">
+    <value>En pause</value>
+  </data>
+  <data name="PlayerPlaying" xml:space="preserve">
+    <value>En lecture</value>
+  </data>
+  <data name="PlayerSeen" xml:space="preserve">
+    <value>Vu le {0}</value>
+  </data>
+  <data name="PlayerShow" xml:space="preserve">
+    <value>Afficher {0}</value>
+  </data>
+  <data name="PlayerUp" xml:space="preserve">
+    <value>Monter {0}</value>
+  </data>
+  <data name="PlayersHint" xml:space="preserve">
+    <value>Les lecteurs déjà vus par NowPlaying. Masqué : jamais affiché ni proposé au clic droit</value>
+  </data>
   <data name="PositionLeft" xml:space="preserve">
     <value>À gauche</value>
   </data>
   <data name="PositionNearClock" xml:space="preserve">
     <value>Près de l&apos;horloge</value>
+  </data>
+  <data name="PreferPlaying" xml:space="preserve">
+    <value>Préférer ce qui joue</value>
+  </data>
+  <data name="PreferPlayingHint" xml:space="preserve">
+    <value>Un lecteur en lecture passe devant un lecteur en pause, même moins prioritaire</value>
   </data>
   <data name="QuitDescription" xml:space="preserve">
     <value>Le widget et les overlays s&apos;arrêtent jusqu&apos;au prochain lancement de NowPlaying (menu Démarrer).</value>
@@ -247,11 +301,26 @@
   <data name="SectionPlace" xml:space="preserve">
     <value>Emplacement</value>
   </data>
+  <data name="SectionPlayers" xml:space="preserve">
+    <value>Lecteurs</value>
+  </data>
   <data name="SectionStyle" xml:space="preserve">
     <value>Style</value>
   </data>
   <data name="SliderResetHint" xml:space="preserve">
     <value>Double-clic : revenir à {0} {1}</value>
+  </data>
+  <data name="SourceMode" xml:space="preserve">
+    <value>Lecteur affiché</value>
+  </data>
+  <data name="SourceModeAuto" xml:space="preserve">
+    <value>Automatique</value>
+  </data>
+  <data name="SourceModeHint" xml:space="preserve">
+    <value>Automatique : le dernier lecteur qui a lancé une lecture. Par priorité : selon l&apos;ordre de la liste</value>
+  </data>
+  <data name="SourceModePriority" xml:space="preserve">
+    <value>Par priorité</value>
   </data>
   <data name="StartWithWindows" xml:space="preserve">
     <value>Démarrer avec Windows</value>
@@ -401,7 +470,7 @@
     <value>Plusieurs applications jouent</value>
   </data>
   <data name="WidgetSourcesHint" xml:space="preserve">
-    <value>La dernière lancée s&apos;affiche ; clic droit sur le widget pour en choisir une autre</value>
+    <value>Celle affichée suit la page Sources ; clic droit sur le widget pour en choisir une autre</value>
   </data>
   <data name="WindowsWeather" xml:space="preserve">
     <value>Météo de Windows</value>

@@ -244,7 +244,7 @@ public partial class WidgetView : UserControl
 
     /// <summary>What the progress shows (see <see cref="Timeline.Kind"/>).</summary>
     internal static ProgressKind Progress(MediaSnapshot? media) =>
-        media is null ? ProgressKind.None : Timeline.Kind(media.PositionNow, media.Duration);
+        media is null ? ProgressKind.None : Timeline.Kind(media.Position, media.Duration);
 
     private void UpdateProgress()
     {

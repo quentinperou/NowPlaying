@@ -40,9 +40,27 @@ plays: alternate the builds, several times, before concluding. The floating widg
 
 ## Project status (October 21, 2026)
 
+**Version 0.2.1** (installed on the shop PC over 0.2.0 at his request, silently as the updater does, settings kept,
+the Widgets package kept; not committed), asked by the author while trying 0.2.0:
+
+- a **Sources** page, first in the menu (mock-up `.local/maquettes/page-sources.png`, approved): the player shown is
+  the last one started (Automatic) or the first of an order of priority (By priority, with "prefer what plays");
+  how long a choice by right click lasts (until another player starts, or until another choice); the players seen
+  (remembered in the settings with their last day), sorted by arrows, hidden by a switch (never shown, not offered
+  by right click). Checked by UI Automation with Chrome and the fake player: priority, hiding.
+- **Menus drawn as Windows'** (`Menus.xaml`): in Windows' mode, as the taskbar (his taskbar is light, his app window
+  dark), rounded, no focus frame. Checked by a picture of the tray menu (opened by its message); the widget menus
+  share the drawing, not opened by Claude.
+- Firefox listed by its name (Windows' name of the app, `AppNames`), not its hash.
+- Fixes: "EN DIRECT" on a normal Firefox video (Firefox tells Windows no timeline there, and the estimated position
+  went on from 0: "live" now needs a position reported by the player, `Timeline.Kind`; checked on his video, the
+  overlay state says `live: false`); the overlay showed the cover of the previous player (cover revisions counted per player: `/cover?r=1` for
+  two players); the switches of the window did not follow a change from a menu (floating widget hidden); a switch
+  toggled by UI Automation changed nothing; Quit moved from About to General.
+
 **Version 0.2.0** (installed on the shop PC over 0.1.3, settings kept: the Widgets package registered, the widget
-process owned by the taskbar, start with Windows kept; not committed), all asked by the author the same afternoon,
-tried by him as a dev build first:
+process owned by the taskbar, start with Windows kept; commit `c83a740`, tag `v0.2.0`, not pushed), all asked by the
+author the same afternoon, tried by him as a dev build first:
 
 - **Widgets board** widget (`src/NowPlaying.Widgets`, a COM server in a sparse package): design A of three rendered
   proposals (`.local/maquettes/widgets-board.png`): the cover blurred as background, the cover, the controls as
@@ -178,8 +196,8 @@ one would show the desktop behind it) and the widget on a Windows 11 taskbar. Ma
 
 | Folder | Role |
 |--------|------|
-| `src/NowPlaying.Core` | Pure, tested logic: `SourcePicker` (which player to show), `Timeline` (position between reports, "3:34"), `DominantColor` (color of a cover, readable under white text), `SpectrumAnalyzer` (Hann + FFT + log bands + smoothing) and `DecorativeBars`, `Styles` (`WidgetStyle`, `OverlayStyle`, enums, ranges), `SurfaceColors` (background / text / track from a style), `Rgb`, `AppIdentity` (player names, process matching), `SemanticVersion`, `UpdateFeed`. |
-| `src/NowPlaying` | WPF .NET 10. `App` (single instance, tray, widgets, overlay, commands; `--taskbar`: the widget process), `TaskbarWidget` (the window over the taskbar, in the widget process), `FloatingWidget` + `FloatingGlass` (its blur) + `FloatingShadow`, `MainWindow` (pages built in code), `PopupMenu` (tray and widget menus), `UpdateBar`, `Localization.cs`; `Controls/`: `WidgetView` (the widget, also the previews), `BarsView`, `OverlayPreview`, `StyleEditor`, `Ui` (cards, `Segmented`); `Services/`: `MediaSessions`, `AppVolume`, `AudioSpectrum`, `OverlayServer`, `TaskbarHost` (app side) + `TaskbarClient` (widget process) + `TaskbarLink` (`LineChannel`, the messages), `SeeThrough`, `TrayHost`, `AppSettings`, `WindowsSettings`, `SingleInstance`, `MicaBackdrop`, `MemoryTrim`, `Updater`, `NativeMethods`; `Overlay/`: the overlay page (HTML, CSS, JS, embedded). |
+| `src/NowPlaying.Core` | Pure, tested logic: `SourcePicker` (which player to show, the rules of the Sources page), `Timeline` (position between reports, "3:34"), `DominantColor` (color of a cover, readable under white text), `SpectrumAnalyzer` (Hann + FFT + log bands + smoothing) and `DecorativeBars`, `Styles` (`WidgetStyle`, `OverlayStyle`, enums, ranges), `SurfaceColors` (background / text / track from a style), `Rgb`, `AppIdentity` (player names, process matching), `SemanticVersion`, `UpdateFeed`. |
+| `src/NowPlaying` | WPF .NET 10. `App` (single instance, tray, widgets, overlay, commands; `--taskbar`: the widget process), `TaskbarWidget` (the window over the taskbar, in the widget process), `FloatingWidget` + `FloatingGlass` (its blur) + `FloatingShadow`, `MainWindow` (pages built in code), `PopupMenu` + `Menus.xaml` (tray and widget menus), `UpdateBar`, `Localization.cs`; `Controls/`: `WidgetView` (the widget, also the previews), `BarsView`, `OverlayPreview`, `StyleEditor`, `Ui` (cards, `Segmented`); `Services/`: `MediaSessions`, `AppNames`, `AppVolume`, `AudioSpectrum`, `OverlayServer`, `TaskbarHost` (app side) + `TaskbarClient` (widget process) + `TaskbarLink` (`LineChannel`, the messages), `SeeThrough`, `TrayHost`, `AppSettings`, `WindowsSettings`, `SingleInstance`, `MicaBackdrop`, `MemoryTrim`, `Updater`, `NativeMethods`; `Overlay/`: the overlay page (HTML, CSS, JS, embedded). |
 | `src/NowPlaying.Widgets` | The widget of the Windows Widgets board: a COM server (`Program`, `ClassFactory`, `WidgetProvider`) that Windows starts while the widget is on the board; `AppLink` (what plays from the app's local server, its buttons back), `Card` (Adaptive Card template and data), `Artwork` (the pictures: blurred background, rounded cover, icons). `package/`: the sparse package (manifest, logos, picker previews). Windows App SDK widgets component, self-contained. |
 | `tests/NowPlaying.Tests` | xUnit: Core, update feed, localization key parity. |
 | `installer/NowPlaying.iss` | Inno Setup (English/French), .NET 10 Desktop Runtime check, closes the running app, registers the Widgets package (Windows 11, `Add-AppxPackage -AllowUnsigned`; kept across updates, removed at uninstall). |
@@ -192,7 +210,13 @@ one would show the desktop behind it) and the widget on a Windows 11 taskbar. Ma
   `net10.0-windows10.0.19041.0`): the sessions of the volume flyout, their track, cover, timeline and commands. Events
   only (no polling), marshalled to the UI thread. Two sessions of one app get ids `appId#2`… Players report their
   position rarely: `Timeline.Extrapolate`. No "like" in this API (the like will need the Spotify Web API).
-- **Which player**: `SourcePicker`, the author's rule; a player picked in the menu stays until another one starts.
+- **Which player**: `SourcePicker`, the author's rule (the last one started); a player picked in the menu stays until
+  another one starts. The Sources page sets a `SourcePolicy`: an order of priority (`AppSettings.Players`, by app id:
+  "chrome#2" ranks as "chrome"), prefer what plays, a choice that stays until another one, hidden players (out of the
+  widgets' menus too, `MediaSessions.Sources`; all of them in `MediaSessions.Players`).
+- **Menus**: the tray and widget menus have their own drawing (`Menus.xaml`, set by `PopupMenu`), in Windows' mode
+  (`SystemUsesLightTheme`, the taskbar's) and not the app's theme, as Windows' own menus of the taskbar; the widget
+  process loads no Fluent theme for them.
 - **The widget window**: Windows 11 lets no app add to its taskbar. A borderless window of our own, `WS_EX_TOOLWINDOW`
   + `WS_EX_NOACTIVATE` (`WM_MOUSEACTIVATE` → `MA_NOACTIVATE`), topmost, put back on top on every foreground change
   (`SetWinEventHook`), an app bar without room (`ABM_NEW`) for `ABN_FULLSCREENAPP`, a 300 ms check only while the
@@ -285,10 +309,21 @@ English (default) and French, following the Windows display language or chosen i
   close the app by its process (`taskkill /im`), not by a window title (an Explorer window on a "NowPlaying" folder
   has it too).
 - `Add-Type` in PowerShell passes `$null` strings as `""`: use `[NullString]::Value` for `FindWindow(null, …)`.
+- A cover's address (`/cover?r=N`) must differ from one player to another: `CoverRevision` is counted over all the
+  players, else a browser source keeps the previous player's picture.
+- WPF raises no `Click` when UI Automation toggles a CheckBox (Narrator, the tests): `Ui.Toggle` listens to
+  Checked / Unchecked, and a change shown from elsewhere goes through `Ui.ShowToggle` (no call back).
+- Firefox names its media sessions with a hash (8 to 16 hex characters) and, without metadata from the site, sends
+  "Firefox lit un contenu multimédia" as the title. Names come from Windows (`shell:AppsFolder\<app id>`). On some
+  sites it tells no timeline at all (length and position 0): never judge "live" from `Timeline.Extrapolate`, which
+  goes on from 0. `dotnet run .local\cs\sessions.cs` prints each session's timeline.
+- A browser gives Windows one media session (its last audible tab): two tabs of one browser are never two players.
+- To see a menu without the mouse: post the tray icon's callback (`WM_APP + 1`, lParam `WM_CONTEXTMENU`) to the
+  hidden "NowPlaying" window, picture the popup's rectangle, post it again to close the menu.
 
 ## To do
 
-- [ ] The author installs 0.2.0 (the Widgets package needs the installer's admin prompt), tries the drag of the
-      floating widget, OBS itself, Spotify.
+- [ ] The author installs 0.2.1, tries the Sources page with real players, the widget menus, the drag of the floating
+      widget, OBS itself, Spotify.
 - [ ] Later: like (Spotify), the taskbars of the other screens, spectrum of the player only (process loopback of
       Windows 11).

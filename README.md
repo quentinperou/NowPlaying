@@ -33,9 +33,15 @@
 - A **visualizer**: the real spectrum of the sound, or a calm animation.
 - The text stays readable: its color follows what is really behind the widget (a light or dark taskbar, a colored or
   see-through one).
-- Several apps playing: the last one started is shown; **right click** to pick another one.
 - On the left, after Windows' weather, or next to the clock. Hidden over full-screen apps, visible even while Start is
   open. Turn off Windows' weather (the app opens the right settings page) and the widget takes its place.
+
+### Several players
+
+- The last one started is shown, or the first of **your order of priority** (one that plays before a paused one, if
+  you like).
+- **Right click** on a widget to pick another one, until the next one starts or until you choose again.
+- Hide the players you never want to see.
 
 ### On the desktop
 
@@ -61,7 +67,7 @@
 
 ### And also
 
-- Windows 11 look (Fluent, Mica), light or dark theme.
+- Windows 11 look (Fluent, Mica), light or dark theme; menus like Windows' own.
 - **English and French**.
 - **Starts with Windows**, and uses nothing while nothing plays.
 - **Updates in one click** from the app (GitHub Releases).

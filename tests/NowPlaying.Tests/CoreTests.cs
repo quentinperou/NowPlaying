@@ -145,6 +145,11 @@ public class TimelineTests
         Assert.Equal(ProgressKind.Track, Timeline.Kind(TimeSpan.Zero, TimeSpan.FromMinutes(3)));
         // A player that tells neither its length nor its position: nothing, not "live".
         Assert.Equal(ProgressKind.None, Timeline.Kind(TimeSpan.Zero, TimeSpan.Zero));
+        // Firefox on some sites: no timeline at all while a video plays. The estimate goes on from 0, the reported
+        // position stays 0: still nothing.
+        var reportedAt = DateTimeOffset.Now.AddSeconds(-30);
+        Assert.True(Timeline.Extrapolate(TimeSpan.Zero, reportedAt, DateTimeOffset.Now, true, 1, TimeSpan.Zero) > TimeSpan.Zero);
+        Assert.Equal(ProgressKind.None, Timeline.Kind(TimeSpan.Zero, TimeSpan.Zero));
     }
 }
 
@@ -208,6 +213,88 @@ public class SourcePickerTests
 
     [Fact]
     public void AnUnknownPlayerCannotBePinned() => Assert.False(new SourcePicker().Pin("nothing"));
+
+    private static SourcePolicy Priority(bool preferPlaying = true, params string[] order) =>
+        SourcePolicy.Default with { Mode = SourceMode.Priority, PreferPlaying = preferPlaying, Order = order };
+
+    [Fact]
+    public void InPriorityMode_TheFirstOfTheListThatPlaysIsShown()
+    {
+        var picker = new SourcePicker();
+        picker.SetPolicy(Priority(true, "spotify", "chrome"));
+        picker.Update("chrome", true);
+        picker.Update("vlc", true);
+        Assert.Equal("chrome", picker.Current); // vlc is not in the list: after it
+        picker.Update("spotify", true);
+        Assert.Equal("spotify", picker.Current);
+        picker.Update("spotify", false);
+        Assert.Equal("chrome", picker.Current); // what plays goes first
+    }
+
+    [Fact]
+    public void InPriorityMode_WithoutPreferPlaying_TheFirstOfTheListStaysEvenPaused()
+    {
+        var picker = new SourcePicker();
+        picker.SetPolicy(Priority(false, "spotify", "chrome"));
+        picker.Update("spotify", false);
+        picker.Update("chrome", true);
+        Assert.Equal("spotify", picker.Current);
+    }
+
+    [Fact]
+    public void InPriorityMode_SecondSessionsOfAnAppShareItsRank()
+    {
+        var picker = new SourcePicker();
+        picker.SetPolicy(Priority(true, "chrome", "spotify"));
+        picker.Update("spotify", true);
+        picker.Update("chrome#2", true);
+        Assert.Equal("chrome#2", picker.Current);
+    }
+
+    [Fact]
+    public void AHiddenPlayer_IsNeverShownNorPinned()
+    {
+        var picker = new SourcePicker();
+        picker.SetPolicy(SourcePolicy.Default with { Hidden = ["chrome"] });
+        picker.Update("spotify", true);
+        picker.Update("chrome#2", true);
+        Assert.Equal("spotify", picker.Current);
+        Assert.False(picker.Pin("chrome#2"));
+        picker.Remove("spotify");
+        Assert.Null(picker.Current);
+    }
+
+    [Fact]
+    public void HidingTheShownPlayer_GivesWayAtOnce()
+    {
+        var picker = new SourcePicker();
+        picker.Update("spotify", true);
+        picker.Update("chrome", true);
+        picker.Pin("chrome"); // already shown: chosen by hand as well
+        Assert.True(picker.SetPolicy(SourcePolicy.Default with { Hidden = ["chrome"] }));
+        Assert.Equal("spotify", picker.Current);
+    }
+
+    [Fact]
+    public void AChoiceThatStaysUntilChanged_SurvivesAnotherStart()
+    {
+        var picker = new SourcePicker();
+        picker.SetPolicy(SourcePolicy.Default with { Pin = PinMode.UntilChanged });
+        picker.Update("spotify", true);
+        picker.Update("chrome", true);
+        picker.Pin("spotify");
+        picker.Update("vlc", true);
+        Assert.Equal("spotify", picker.Current);
+        picker.Remove("spotify"); // gone: the rules apply again
+        Assert.Equal("vlc", picker.Current);
+    }
+
+    [Fact]
+    public void AppOf_DropsTheNumberOfASecondSession()
+    {
+        Assert.Equal("chrome", SourcePicker.AppOf("chrome#2"));
+        Assert.Equal("Spotify.exe", SourcePicker.AppOf("Spotify.exe"));
+    }
 }
 
 public class AppIdentityTests
@@ -218,6 +305,7 @@ public class AppIdentityTests
     [InlineData("MSEdge", "Microsoft Edge")]
     [InlineData("Chrome", "Google Chrome")]
     [InlineData("308046B0AF4A39CB", "Firefox")]
+    [InlineData("C122DBAFB30CA16", "Firefox")] // 15 digits, seen on the shop PC
     [InlineData("Microsoft.ZuneMusic_8wekyb3d8bbwe!Microsoft.ZuneMusic", "Media Player")]
     [InlineData("Contoso.SuperPlayer_abc123!App", "SuperPlayer")]
     [InlineData(@"C:\Tools\winamp.exe", "Winamp")]
@@ -228,6 +316,7 @@ public class AppIdentityTests
     [InlineData("MSEdge", "msedge", null, true)]
     [InlineData("Chrome", "chrome.exe", null, true)]
     [InlineData("308046B0AF4A39CB", "firefox", null, true)]
+    [InlineData("C122DBAFB30CA16", "firefox", null, true)]
     [InlineData("SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify", "Spotify", "SpotifyAB.SpotifyMusic_zpdnekdrzrea0", true)]
     [InlineData("SpotifyAB.SpotifyMusic_zpdnekdrzrea0!Spotify", "Spotify", null, false)]
     [InlineData("Spotify.exe", "chrome", null, false)]

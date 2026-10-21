@@ -33,10 +33,16 @@
 - Un **visualiseur** : le vrai spectre du son, ou une animation calme.
 - Le texte reste lisible : sa couleur suit ce qu'il y a vraiment derrière le widget (barre des tâches claire ou
   sombre, colorée ou transparente).
-- Plusieurs applications en lecture : la dernière lancée s'affiche ; **clic droit** pour en choisir une autre.
 - À gauche, après la météo de Windows, ou à côté de l'horloge. Caché par-dessus les applications en plein écran,
   visible même menu Démarrer ouvert. Désactivez la météo de Windows (l'application ouvre la bonne page des
   paramètres) et le widget prend sa place.
+
+### Plusieurs lecteurs
+
+- Le dernier lancé s'affiche, ou le premier de **votre ordre de priorité** (un lecteur en lecture avant un lecteur en
+  pause, si vous voulez).
+- **Clic droit** sur un widget pour en choisir un autre, jusqu'au lancement du suivant ou jusqu'à un autre choix.
+- Masquez les lecteurs que vous ne voulez jamais voir.
 
 ### Sur le bureau
 
@@ -65,7 +71,7 @@
 
 ### Et aussi
 
-- L'apparence de Windows 11 (Fluent, Mica), thème clair ou sombre.
+- L'apparence de Windows 11 (Fluent, Mica), thème clair ou sombre ; des menus comme ceux de Windows.
 - **Anglais et français**.
 - **Démarre avec Windows**, et ne consomme rien quand rien ne joue.
 - **Mises à jour en un clic** depuis l'application (GitHub Releases).

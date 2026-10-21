@@ -45,11 +45,12 @@
   function frame(now) {
     if (state.hasTrack && style) {
       if (style.showProgress) {
-        // No length: a live stream if the position goes on ("live" instead of the times and the bar), else nothing.
+        // No length: a live stream if the player reports a position ("live" instead of the times and the bar), else
+        // nothing (the app tells which).
         const at = (state.positionMs || 0) + (state.playing ? now - receivedAt : 0);
         const length = state.durationMs || 0;
-        el.classList.toggle('is-live', length <= 0 && at > 0);
-        el.classList.toggle('no-length', length <= 0 && at <= 0);
+        el.classList.toggle('is-live', length <= 0 && !!state.live);
+        el.classList.toggle('no-length', length <= 0 && !state.live);
         const ms = length > 0 ? Math.min(length, at) : at;
         $('.t0').textContent = fmt(ms);
         $('.fill').style.width = (length > 0 ? ms / length * 100 : 0) + '%';

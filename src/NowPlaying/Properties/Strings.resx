@@ -25,6 +25,9 @@
   <data name="Apply" xml:space="preserve">
     <value>Apply</value>
   </data>
+  <data name="BrowsersOneTab" xml:space="preserve">
+    <value>A browser tells Windows of one tab at a time: to follow two, use two browsers (or the app of the service).</value>
+  </data>
   <data name="ButtonNext" xml:space="preserve">
     <value>Next</value>
   </data>
@@ -163,6 +166,12 @@
   <data name="MenuSource" xml:space="preserve">
     <value>Source</value>
   </data>
+  <data name="NoPlayers" xml:space="preserve">
+    <value>No player seen yet</value>
+  </data>
+  <data name="NoPlayersHint" xml:space="preserve">
+    <value>Play something: its player shows here</value>
+  </data>
   <data name="NothingPlaying" xml:space="preserve">
     <value>Nothing playing</value>
   </data>
@@ -223,17 +232,62 @@
   <data name="PageOverlay" xml:space="preserve">
     <value>OBS overlay</value>
   </data>
+  <data name="PageSources" xml:space="preserve">
+    <value>Sources</value>
+  </data>
   <data name="PageUpdates" xml:space="preserve">
     <value>Updates</value>
   </data>
   <data name="PageWidget" xml:space="preserve">
     <value>Taskbar</value>
   </data>
+  <data name="PinMode" xml:space="preserve">
+    <value>Player chosen by right click</value>
+  </data>
+  <data name="PinModeHint" xml:space="preserve">
+    <value>How long it stays shown once chosen in the menu of a widget</value>
+  </data>
+  <data name="PinModeUntilChanged" xml:space="preserve">
+    <value>Until I choose another one</value>
+  </data>
+  <data name="PinModeUntilNextStart" xml:space="preserve">
+    <value>Until another player starts</value>
+  </data>
+  <data name="PlayerDown" xml:space="preserve">
+    <value>Move {0} down</value>
+  </data>
+  <data name="PlayerHidden" xml:space="preserve">
+    <value>Never shown</value>
+  </data>
+  <data name="PlayerPaused" xml:space="preserve">
+    <value>Paused</value>
+  </data>
+  <data name="PlayerPlaying" xml:space="preserve">
+    <value>Playing</value>
+  </data>
+  <data name="PlayerSeen" xml:space="preserve">
+    <value>Last seen {0}</value>
+  </data>
+  <data name="PlayerShow" xml:space="preserve">
+    <value>Show {0}</value>
+  </data>
+  <data name="PlayerUp" xml:space="preserve">
+    <value>Move {0} up</value>
+  </data>
+  <data name="PlayersHint" xml:space="preserve">
+    <value>The players seen by NowPlaying. Hidden: never shown nor offered by right click</value>
+  </data>
   <data name="PositionLeft" xml:space="preserve">
     <value>Left</value>
   </data>
   <data name="PositionNearClock" xml:space="preserve">
     <value>Near the clock</value>
+  </data>
+  <data name="PreferPlaying" xml:space="preserve">
+    <value>Prefer what plays</value>
+  </data>
+  <data name="PreferPlayingHint" xml:space="preserve">
+    <value>A player that plays goes before a paused one, even lower in the list</value>
   </data>
   <data name="QuitDescription" xml:space="preserve">
     <value>The widget and the overlays stop until NowPlaying is started again (Start menu).</value>
@@ -247,11 +301,26 @@
   <data name="SectionPlace" xml:space="preserve">
     <value>Place</value>
   </data>
+  <data name="SectionPlayers" xml:space="preserve">
+    <value>Players</value>
+  </data>
   <data name="SectionStyle" xml:space="preserve">
     <value>Style</value>
   </data>
   <data name="SliderResetHint" xml:space="preserve">
     <value>Double-click: back to {0} {1}</value>
+  </data>
+  <data name="SourceMode" xml:space="preserve">
+    <value>Player shown</value>
+  </data>
+  <data name="SourceModeAuto" xml:space="preserve">
+    <value>Automatic</value>
+  </data>
+  <data name="SourceModeHint" xml:space="preserve">
+    <value>Automatic: the last player that started. By priority: in the order of the list</value>
+  </data>
+  <data name="SourceModePriority" xml:space="preserve">
+    <value>By priority</value>
   </data>
   <data name="StartWithWindows" xml:space="preserve">
     <value>Start with Windows</value>
@@ -401,7 +470,7 @@
     <value>Several apps playing</value>
   </data>
   <data name="WidgetSourcesHint" xml:space="preserve">
-    <value>The last one started is shown; right click on the widget to choose another one</value>
+    <value>The one shown follows the Sources page; right click on the widget to choose another one</value>
   </data>
   <data name="WindowsWeather" xml:space="preserve">
     <value>Windows weather</value>

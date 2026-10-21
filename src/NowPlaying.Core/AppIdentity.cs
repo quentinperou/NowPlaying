@@ -81,5 +81,6 @@ public static class AppIdentity
         return id.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ? id[..^4] : id;
     }
 
-    private static bool IsFirefoxHash(string key) => key.Length == 16 && key.All(Uri.IsHexDigit);
+    // A hex number, 16 digits or fewer (one of the shop PC had 15: no leading zero): no exe is named like that.
+    private static bool IsFirefoxHash(string key) => key.Length is >= 8 and <= 16 && key.All(Uri.IsHexDigit);
 }

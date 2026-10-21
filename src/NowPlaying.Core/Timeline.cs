@@ -42,10 +42,12 @@ public static class Timeline
 
     /// <summary>
     /// What the progress shows: the times and the bar of a track (its length is known), "live" (no length, but the
-    /// position goes on: a live stream), or nothing (a player that tells neither: "live" would be wrong for a song).
+    /// player reports a position: a live stream), or nothing (a player that tells neither: "live" would be wrong for a
+    /// song). <paramref name="reportedPosition"/>: the player's, not <see cref="Extrapolate"/>'s, which goes on from 0
+    /// for a player that reports no timeline at all (Firefox on some sites).
     /// </summary>
-    public static ProgressKind Kind(TimeSpan positionNow, TimeSpan duration) =>
-        duration > TimeSpan.Zero ? ProgressKind.Track : positionNow > TimeSpan.Zero ? ProgressKind.Live : ProgressKind.None;
+    public static ProgressKind Kind(TimeSpan reportedPosition, TimeSpan duration) =>
+        duration > TimeSpan.Zero ? ProgressKind.Track : reportedPosition > TimeSpan.Zero ? ProgressKind.Live : ProgressKind.None;
 }
 
 /// <summary>See <see cref="Timeline.Kind"/>.</summary>

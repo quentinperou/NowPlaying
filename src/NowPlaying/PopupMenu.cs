@@ -2,13 +2,15 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Interop;
+using System.Windows.Media;
 using NowPlaying.Services;
 
 namespace NowPlaying;
 
 /// <summary>
-/// The menus of the notification icon and of the widgets (Fluent theme, light or dark). They are built each time they
-/// open, so that they show the current players and language, and nothing of them stays in memory afterwards.
+/// The menus of the notification icon and of the widgets, drawn as Windows' own (Menus.xaml) in Windows' mode. They are
+/// built each time they open, so that they show the current players and language, and nothing of them stays in memory
+/// afterwards.
 /// </summary>
 internal static class PopupMenu
 {
@@ -81,7 +83,6 @@ internal static class PopupMenu
             return;
         }
 
-        App.EnsureTheme();
         // A WPF menu of an app with no window in front loses the mouse capture as it opens, and closes at once. So the
         // menu belongs to a tiny invisible window under the pointer, activated first (a click on the icon or the widget
         // gives the app the right to come to the front), and closed with the menu.
@@ -109,9 +110,13 @@ internal static class PopupMenu
         host.Activate();
 
         var menu = build();
+        Dress(menu);
         menu.PlacementTarget = host;
-        // Above the taskbar: its bottom on the top of the taskbar, where the host is.
+        // Above the taskbar: its bottom on the top of the taskbar, where the host is (the room of the shadow leaves a gap,
+        // as Windows' own menus). Else its corner at the pointer.
         menu.Placement = aboveY is null ? PlacementMode.MousePoint : PlacementMode.Top;
+        menu.HorizontalOffset = -ShadowRoom;
+        menu.VerticalOffset = aboveY is null ? -ShadowRoom : 0;
         // Not the popup itself: activating it would deactivate the host, which closes the menu.
         menu.Closed += (_, _) =>
         {
@@ -121,6 +126,29 @@ internal static class PopupMenu
         };
         s_open = menu;
         menu.IsOpen = true;
+    }
+
+    // The margin of the menu around its border, for its shadow (Menus.xaml).
+    private const int ShadowRoom = 12;
+
+    // The look of Windows 11's menus, in Windows' mode (that of the taskbar), whatever the theme of the app window.
+    private static void Dress(ContextMenu menu)
+    {
+        menu.Resources.MergedDictionaries.Add((ResourceDictionary)Application.LoadComponent(new Uri("/NowPlaying;component/Menus.xaml", UriKind.Relative)));
+        menu.Style = (Style)menu.Resources["WindowsMenu"];
+        bool dark = WindowsSettings.TaskbarIsDark;
+        (string Key, string Light, string Dark)[] colors =
+        [
+            ("MenuSurface", "#F9F9F9", "#2C2C2C"),
+            ("MenuStroke", "#E3E3E3", "#424242"),
+            ("MenuText", "#1B1B1B", "#FFFFFF"),
+            ("MenuTextSecondary", "#5F5F5F", "#C5C5C5"),
+            ("MenuTextDisabled", "#A0A0A0", "#7A7A7A"),
+            ("MenuHover", "#EDEDED", "#383838"),
+            ("MenuDivider", "#E5E5E5", "#404040"),
+        ];
+        foreach (var (key, light, darkColor) in colors)
+            menu.Resources[key] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(dark ? darkColor : light));
     }
 
     private static MenuItem Item(string header, string glyph, Action action)

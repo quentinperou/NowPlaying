@@ -2,8 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              ShutdownMode="OnExplicitShutdown">
-  <!-- No ThemeMode here: the Fluent theme is only loaded when the window or a menu first opens (App.EnsureTheme), so
-       that the app, resident in the taskbar, stays light until then. The widget draws its own colors. -->
+  <!-- No ThemeMode here: the Fluent theme is only loaded when the window first opens (App.EnsureTheme), so that the
+       app, resident in the taskbar, stays light until then. The widgets and the menus (Menus.xaml) draw their own colors. -->
   <Application.Resources>
     <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
 

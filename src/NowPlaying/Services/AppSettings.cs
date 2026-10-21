@@ -35,6 +35,18 @@ public sealed class AppSettings
     [JsonConverter(typeof(JsonStringEnumConverter<AppTheme>))]
     public AppTheme Theme { get; set; } = AppTheme.System;
 
+    /// <summary>How the player shown is chosen: the last one started, or the order of <see cref="Players"/>.</summary>
+    public SourceMode SourceMode { get; set; } = SourceMode.Auto;
+
+    /// <summary>In <see cref="SourceMode.Priority"/>: a player that plays goes before one in pause.</summary>
+    public bool PreferPlaying { get; set; } = true;
+
+    /// <summary>How long a player chosen in the menu of a widget stays.</summary>
+    public PinMode PinMode { get; set; } = PinMode.UntilNextStart;
+
+    /// <summary>The players seen by the app, in the order of priority (the Sources page).</summary>
+    public List<KnownPlayer> Players { get; set; } = [];
+
     /// <summary>The widget is shown in the taskbar (off: only the overlays, for a streamer who wants nothing more).</summary>
     public bool WidgetEnabled { get; set; } = true;
 
@@ -84,6 +96,36 @@ public sealed class AppSettings
 
     public OverlayStyle Overlay(OverlayLayout layout) => layout == OverlayLayout.Bar ? OverlayBar : OverlayCard;
 
+    public SourcePolicy SourcePolicy() => new(SourceMode, PreferPlaying, PinMode,
+        [.. Players.Select(p => p.AppId)], [.. Players.Where(p => p.Hidden).Select(p => p.AppId)]);
+
+    /// <summary>
+    /// The players known to Windows now: a new one goes at the end of <see cref="Players"/>, the others get their name
+    /// and today's date. True when something changed (to be saved).
+    /// </summary>
+    public bool RememberPlayers(IEnumerable<(string AppId, string Name)> present)
+    {
+        bool changed = false;
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        foreach (var (appId, name) in present)
+        {
+            if (appId.Length == 0)
+                continue;
+            var player = Players.Find(p => string.Equals(p.AppId, appId, StringComparison.OrdinalIgnoreCase));
+            if (player is null)
+            {
+                Players.Add(new KnownPlayer { AppId = appId, Name = name, LastSeen = today });
+                changed = true;
+            }
+            else if (player.Name != name || player.LastSeen != today)
+            {
+                (player.Name, player.LastSeen) = (name, today);
+                changed = true;
+            }
+        }
+        return changed;
+    }
+
     // A missing or damaged file just means default settings: preferences are never worth an error message.
     public static AppSettings Load()
     {
@@ -99,6 +141,8 @@ public sealed class AppSettings
                 settings.OverlayCard = (settings.OverlayCard ?? OverlayStyle.DefaultCard()).Normalized(OverlayLayout.Card);
                 if (settings.OverlayPort is < 1024 or > 65535)
                     settings.OverlayPort = DefaultOverlayPort;
+                settings.Players = [.. (settings.Players ?? []).Where(p => p is { AppId.Length: > 0 })
+                    .DistinctBy(p => p.AppId, StringComparer.OrdinalIgnoreCase)];
                 return settings;
             }
         }
@@ -119,4 +163,18 @@ public sealed class AppSettings
         {
         }
     }
+}
+
+/// <summary>A player seen by the app (its media app id, as Windows gives it), for the Sources page.</summary>
+public sealed class KnownPlayer
+{
+    public string AppId { get; set; } = "";
+
+    /// <summary>Its name when last seen (to list it while it is closed).</summary>
+    public string Name { get; set; } = "";
+
+    /// <summary>Never shown by the widgets nor the overlay, nor offered in their menu.</summary>
+    public bool Hidden { get; set; }
+
+    public DateOnly LastSeen { get; set; }
 }

@@ -144,6 +144,7 @@ internal sealed class OverlayServer : IDisposable
             playing = media?.IsPlaying ?? false,
             positionMs = (long)(media?.PositionNow.TotalMilliseconds ?? 0),
             durationMs = (long)(media?.Duration.TotalMilliseconds ?? 0),
+            live = media is not null && Timeline.Kind(media.Position, media.Duration) == ProgressKind.Live,
             cover = media?.CoverBytes is { Length: > 0 } ? $"/cover?r={media.CoverRevision}" : null,
             keepWhenIdle,
         }, Json);

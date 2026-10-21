@@ -95,8 +95,25 @@ internal static class Ui
     {
         var toggle = new CheckBox { IsChecked = isOn, Style = (Style)Application.Current.FindResource("ToggleSwitch") };
         System.Windows.Automation.AutomationProperties.SetName(toggle, automationName);
-        toggle.Click += (_, _) => changed(toggle.IsChecked == true);
+        // Checked / Unchecked rather than Click: UI Automation (Narrator, the tests) toggles without a click.
+        void Toggled(object sender, RoutedEventArgs e)
+        {
+            if (s_quiet != toggle)
+                changed(toggle.IsChecked == true);
+        }
+        toggle.Checked += Toggled;
+        toggle.Unchecked += Toggled;
         return toggle;
+    }
+
+    private static CheckBox? s_quiet;
+
+    /// <summary>Shows a setting changed elsewhere (a menu of a widget) on its switch, without calling back.</summary>
+    public static void ShowToggle(CheckBox toggle, bool isOn)
+    {
+        s_quiet = toggle;
+        toggle.IsChecked = isOn;
+        s_quiet = null;
     }
 
     /// <summary>A toggle with its label on its left ("Artist ◯").</summary>

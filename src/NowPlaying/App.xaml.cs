@@ -108,6 +108,7 @@ public partial class App : Application
         Taskbar.QuitRequested += (_, _) => Quit();
 
         Media.Changed += (_, _) => MediaChanged();
+        Media.SetPolicy(Settings.SourcePolicy());
         ApplyStyles(save: false);
         _ = Media.StartAsync();
 
@@ -142,6 +143,9 @@ public partial class App : Application
     private static void MediaChanged()
     {
         var media = Media.Current;
+        // The players seen, listed on the Sources page (also while they are closed).
+        if (Settings.RememberPlayers(Media.Players.Select(p => (p.AppId, p.AppName))))
+            SaveSoon();
         RefreshWidget();
         Overlay.UpdateState(media, keepWhenIdle: false);
         // The "Cover" color follows the track.
@@ -166,7 +170,7 @@ public partial class App : Application
 
         var widget = Settings.Widget;
         Taskbar.Update(widget, shown, idle, Wanted(Settings.WidgetEnabled, widget), Settings.WidgetEnabled,
-            Media.Sources, Settings.Language, Settings.Theme);
+            Media.Sources, Settings.Language);
 
         var floating = Settings.Floating;
         if (Settings.FloatingEnabled && Floating is null)
@@ -284,11 +288,20 @@ public partial class App : Application
             SaveSoon();
     }
 
+    /// <summary>The rules of the Sources page changed: the player shown and the menus follow, saved a moment later.</summary>
+    internal static void ApplySources()
+    {
+        Media.SetPolicy(Settings.SourcePolicy());
+        RefreshWidget();
+        SaveSoon();
+    }
+
     internal static void SetWidgetEnabled(bool enabled)
     {
         Settings.WidgetEnabled = enabled;
         Settings.Save();
         RefreshWidget();
+        StyleChanged?.Invoke(null, EventArgs.Empty);
     }
 
     /// <summary>The OBS pages on or off (the server stays, for the widget of the Windows Widgets board).</summary>
@@ -357,8 +370,8 @@ public partial class App : Application
     // ---------------------------------------------------------------- Windows, theme, language
 
     /// <summary>
-    /// Loads the Fluent theme (light/dark/system) the first time the window or a menu opens: until then the app does not
-    /// hold the theme's resources. NOWPLAYING_THEME=Light|Dark forces one.
+    /// Loads the Fluent theme (light/dark/system) the first time the window opens: until then the app does not hold the
+    /// theme's resources. NOWPLAYING_THEME=Light|Dark forces one.
     /// </summary>
     public static void EnsureTheme()
     {

@@ -75,9 +75,9 @@ internal sealed class TaskbarHost : IDisposable
 
     /// <summary>What the widget shows. <paramref name="enabled"/>: the widget process runs (the widget is on).</summary>
     public void Update(WidgetStyle style, MediaSnapshot? media, bool idle, bool wanted, bool enabled,
-        IReadOnlyList<MediaSource> sources, string language, AppTheme theme)
+        IReadOnlyList<MediaSource> sources, string language)
     {
-        _state = new TaskbarState(style, wanted, idle, media is null ? null : TaskbarMedia.From(media), sources, language, theme);
+        _state = new TaskbarState(style, wanted, idle, media is null ? null : TaskbarMedia.From(media), sources, language);
         _media = media;
         _enabled = enabled;
         if (!enabled)

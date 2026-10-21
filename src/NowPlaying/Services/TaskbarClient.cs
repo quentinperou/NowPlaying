@@ -164,7 +164,6 @@ internal sealed class TaskbarClient
                         // For the menu, as in the app.
                         if (state.Language != _language)
                             App.ApplyLanguage(_language = state.Language);
-                        App.Settings.Theme = state.Theme;
                     }
                     Apply();
                     break;

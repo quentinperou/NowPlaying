@@ -8,10 +8,10 @@ namespace NowPlaying.Services;
 
 /// <summary>
 /// What the widget process shows, sent by the app at each change (one line of JSON): the widget, and for its menu the
-/// players known to Windows, the language and the theme of the app.
+/// players known to Windows and the language of the app.
 /// </summary>
 internal sealed record TaskbarState(WidgetStyle Style, bool Wanted, bool Idle, TaskbarMedia? Media,
-    IReadOnlyList<MediaSource> Sources, string Language, AppTheme Theme);
+    IReadOnlyList<MediaSource> Sources, string Language);
 
 /// <summary>A <see cref="MediaSnapshot"/> without its cover, which goes in a line of its own when it changes.</summary>
 internal sealed record TaskbarMedia(

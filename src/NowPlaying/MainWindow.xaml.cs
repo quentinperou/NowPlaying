@@ -11,6 +11,7 @@ namespace NowPlaying;
 /// <summary>The pages of the app window, in the order of its menu.</summary>
 public enum MainPage
 {
+    Sources,
     Widget,
     Floating,
     Overlay,
@@ -69,6 +70,7 @@ public partial class MainWindow : Window
         {
             content = page switch
             {
+                MainPage.Sources => BuildSourcesPage(),
                 MainPage.Widget => BuildWidgetPage(),
                 MainPage.Floating => BuildFloatingPage(),
                 MainPage.Overlay => BuildOverlayPage(),
@@ -87,6 +89,7 @@ public partial class MainWindow : Window
     {
         var (glyph, key) = page switch
         {
+            MainPage.Sources => ("", "PageSources"),
             MainPage.Widget => ("", "PageWidget"),
             MainPage.Floating => ("", "PageFloating"),
             MainPage.Overlay => ("", "PageOverlay"),
@@ -102,6 +105,202 @@ public partial class MainWindow : Window
         return item;
     }
 
+    // ---------------------------------------------------------------- Sources page
+
+    private StackPanel? _players;
+    private CheckBox? _preferPlaying;
+    private string? _playersShown;
+
+    // Which player the widgets and the overlay show (the last one started, or an order of priority), how long a choice
+    // made by right click stays, and the players seen, to sort or hide (the mock-up the author approved).
+    private FrameworkElement BuildSourcesPage()
+    {
+        var settings = App.Settings;
+        var page = new StackPanel();
+        page.Children.Add(Ui.PageTitle(Strings.Get("PageSources")));
+
+        page.Children.Add(Ui.Card("", Strings.Get("SourceMode"), Strings.Get("SourceModeHint"),
+            Segmented.Of(
+                [(SourceMode.Auto, Strings.Get("SourceModeAuto")), (SourceMode.Priority, Strings.Get("SourceModePriority"))],
+                settings.SourceMode, mode =>
+                {
+                    settings.SourceMode = mode;
+                    App.ApplySources();
+                    ShowPlayers();
+                })));
+        _preferPlaying = Ui.Toggle(settings.PreferPlaying, on =>
+        {
+            settings.PreferPlaying = on;
+            App.ApplySources();
+        }, Strings.Get("PreferPlaying"));
+        page.Children.Add(Ui.Card("", Strings.Get("PreferPlaying"), Strings.Get("PreferPlayingHint"), _preferPlaying));
+        page.Children.Add(Ui.Card("", Strings.Get("PinMode"), Strings.Get("PinModeHint"),
+            Ui.Choice([(PinMode.UntilNextStart, Strings.Get("PinModeUntilNextStart")), (PinMode.UntilChanged, Strings.Get("PinModeUntilChanged"))],
+                settings.PinMode, mode =>
+                {
+                    settings.PinMode = mode;
+                    App.ApplySources();
+                })));
+
+        page.Children.Add(Ui.Section(Strings.Get("SectionPlayers")));
+        _players = new StackPanel();
+        page.Children.Add(_players);
+
+        // A browser tells Windows of one tab only (the last one that made a sound).
+        var info = new DockPanel();
+        var infoIcon = new TextBlock { Text = "", Style = (Style)Application.Current.FindResource("IconText"), Margin = new Thickness(0, 1, 10, 0), VerticalAlignment = VerticalAlignment.Top };
+        DockPanel.SetDock(infoIcon, Dock.Left);
+        info.Children.Add(infoIcon);
+        info.Children.Add(new TextBlock { Text = Strings.Get("BrowsersOneTab"), TextWrapping = TextWrapping.Wrap });
+        page.Children.Add(new Border { Style = (Style)Application.Current.FindResource("InfoBar"), Child = info, Margin = new Thickness(0, 8, 0, 0) });
+
+        ShowPlayers();
+        return page;
+    }
+
+    /// <summary>The rows of the players seen, built again when what they show changed (not at each position report).</summary>
+    private void ShowPlayers()
+    {
+        if (_players is null || _preferPlaying is null)
+            return;
+        var settings = App.Settings;
+        bool priority = settings.SourceMode == SourceMode.Priority;
+        _preferPlaying.IsEnabled = priority;
+
+        var present = App.Media.Players;
+        var rows = new List<(KnownPlayer Player, string State, bool Playing)>();
+        foreach (var player in settings.Players)
+        {
+            var sessions = present.Where(s => string.Equals(s.AppId, player.AppId, StringComparison.OrdinalIgnoreCase)).ToList();
+            var playing = sessions.FirstOrDefault(s => s.IsPlaying);
+            string state = player.Hidden ? Strings.Get("PlayerHidden")
+                : playing is not null ? Join(Strings.Get("PlayerPlaying"), playing.Title)
+                : sessions.Count > 0 ? Join(Strings.Get("PlayerPaused"), sessions[0].Title)
+                : Strings.Format("PlayerSeen", player.LastSeen.ToString("M", System.Globalization.CultureInfo.CurrentUICulture));
+            rows.Add((player, state, playing is not null && !player.Hidden));
+        }
+
+        string shown = $"{priority}|" + string.Join("|", rows.Select(r => $"{r.Player.AppId}/{r.Player.Name}/{r.Player.Hidden}/{r.State}/{r.Playing}"));
+        if (shown == _playersShown)
+            return;
+        _playersShown = shown;
+
+        _players.Children.Clear();
+        if (rows.Count == 0)
+        {
+            _players.Children.Add(Ui.Card("", Strings.Get("NoPlayers"), Strings.Get("NoPlayersHint")));
+            return;
+        }
+        int rank = 0;
+        for (int i = 0; i < rows.Count; i++)
+        {
+            var (player, state, isPlaying) = rows[i];
+            _players.Children.Add(PlayerRow(player, player.Hidden ? null : ++rank, state, isPlaying, priority,
+                canUp: i > 0, canDown: i < rows.Count - 1));
+        }
+        _players.Children.Add(new TextBlock { Text = Strings.Get("PlayersHint"), Style = (Style)Application.Current.FindResource("CardDescription"), Margin = new Thickness(2, 4, 0, 0) });
+
+        static string Join(string state, string title) => string.IsNullOrWhiteSpace(title) ? state : $"{state} · {title}";
+    }
+
+    // One player: its rank, a tile with its initial, its name and state, up / down, shown or not.
+    private Border PlayerRow(KnownPlayer player, int? rank, string state, bool isPlaying, bool priority, bool canUp, bool canDown)
+    {
+        string name = player.Name.Length > 0 ? player.Name : player.AppId;
+        var dock = new DockPanel();
+
+        var rankText = new TextBlock
+        {
+            Text = !priority ? "" : rank is { } r ? r.ToString() : "–",
+            Width = 18, TextAlignment = TextAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0),
+        };
+        rankText.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorSecondaryBrush");
+        DockPanel.SetDock(rankText, Dock.Left);
+        dock.Children.Add(rankText);
+
+        var tile = new Border
+        {
+            Width = 32, Height = 32, CornerRadius = new CornerRadius(6), Margin = new Thickness(0, 0, 14, 0),
+            Background = new SolidColorBrush(TileColor(name)),
+            Child = new TextBlock
+            {
+                Text = name[..1].ToUpperInvariant(), Foreground = Brushes.White, FontWeight = FontWeights.SemiBold,
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+            },
+        };
+        DockPanel.SetDock(tile, Dock.Left);
+        dock.Children.Add(tile);
+
+        var show = Ui.Toggle(!player.Hidden, on =>
+        {
+            player.Hidden = !on;
+            App.ApplySources();
+            ShowPlayers();
+        }, Strings.Format("PlayerShow", name));
+        show.VerticalAlignment = VerticalAlignment.Center;
+        show.Margin = new Thickness(16, 0, 0, 0);
+        DockPanel.SetDock(show, Dock.Right);
+        dock.Children.Add(show);
+
+        // The order only matters in the priority mode (greyed otherwise, still shown).
+        var arrows = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(16, 0, 0, 0) };
+        arrows.Children.Add(Arrow("", Strings.Format("PlayerUp", name), priority && !player.Hidden && canUp, () => Move(player, -1)));
+        arrows.Children.Add(Arrow("", Strings.Format("PlayerDown", name), priority && !player.Hidden && canDown, () => Move(player, +1)));
+        DockPanel.SetDock(arrows, Dock.Right);
+        dock.Children.Add(arrows);
+
+        var texts = Ui.Texts(name, state);
+        if (isPlaying && texts.Children[^1] is TextBlock stateText)
+            stateText.SetResourceReference(TextBlock.ForegroundProperty, "AccentTextFillColorPrimaryBrush");
+        dock.Children.Add(texts);
+
+        if (player.Hidden)
+        {
+            tile.Opacity = 0.45;
+            texts.Opacity = 0.55;
+        }
+        return new Border { Style = (Style)Application.Current.FindResource("Card"), Child = dock, Padding = new Thickness(12, 10, 16, 10) };
+    }
+
+    private static Button Arrow(string glyph, string automationName, bool enabled, Action click)
+    {
+        var button = new Button
+        {
+            // The icon keeps its color in a disabled button of the Fluent theme: greyed here.
+            Content = new TextBlock { Text = glyph, Style = (Style)Application.Current.FindResource("IconText"), FontSize = 12, Opacity = enabled ? 1 : 0.35 },
+            Width = 32, Height = 32, Padding = new Thickness(0), Margin = new Thickness(4, 0, 0, 0), IsEnabled = enabled,
+        };
+        System.Windows.Automation.AutomationProperties.SetName(button, automationName);
+        button.Click += (_, _) => click();
+        return button;
+    }
+
+    // One place up or down in the order of priority.
+    private void Move(KnownPlayer player, int by)
+    {
+        var players = App.Settings.Players;
+        int from = players.IndexOf(player), to = from + by;
+        if (from < 0 || to < 0 || to >= players.Count)
+            return;
+        (players[from], players[to]) = (players[to], players[from]);
+        App.ApplySources();
+        ShowPlayers();
+    }
+
+    // The color of a tile, from its name (the same at every start).
+    private static Color TileColor(string name)
+    {
+        Color[] palette =
+        [
+            Color.FromRgb(0x1D, 0xB9, 0x54), Color.FromRgb(0x25, 0x63, 0xEB), Color.FromRgb(0xF9, 0x73, 0x16), Color.FromRgb(0x7C, 0x3A, 0xED),
+            Color.FromRgb(0xDB, 0x27, 0x77), Color.FromRgb(0x08, 0x91, 0xB2), Color.FromRgb(0xDC, 0x26, 0x26), Color.FromRgb(0x4F, 0x46, 0xE5),
+        ];
+        int sum = 0;
+        foreach (char c in name.ToLowerInvariant())
+            sum = unchecked(sum * 31 + c);
+        return palette[(int)((uint)sum % palette.Length)];
+    }
+
     // ---------------------------------------------------------------- Taskbar page
 
     private FrameworkElement BuildWidgetPage()
@@ -111,7 +310,7 @@ public partial class MainWindow : Window
         page.Children.Add(Ui.PageTitle(Strings.Get("PageWidget")));
 
         page.Children.Add(Ui.Card("", Strings.Get("WidgetShow"), Strings.Get("WidgetShowHint"),
-            Ui.Toggle(App.Settings.WidgetEnabled, App.SetWidgetEnabled, Strings.Get("WidgetShow"))));
+            Synced(() => App.Settings.WidgetEnabled, Ui.Toggle(App.Settings.WidgetEnabled, App.SetWidgetEnabled, Strings.Get("WidgetShow")))));
 
         // Live preview on a strip of taskbar, in the colors of the real one.
         _widgetPreview = new WidgetView { Spectrum = App.Spectrum, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(4, 4, 0, 4) };
@@ -164,7 +363,8 @@ public partial class MainWindow : Window
         page.Children.Add(Ui.Card("", Strings.Get("WidgetIdle"), Strings.Get("WidgetIdleHint"),
             Ui.Choice([(IdleMode.Hide, Strings.Get("IdleHide")), (IdleMode.KeepLast, Strings.Get("IdleKeepLast"))],
                 style.Idle, v => { style.Idle = v; App.ApplyStyles(); })));
-        page.Children.Add(Ui.Card("", Strings.Get("WidgetSources"), Strings.Get("WidgetSourcesHint")));
+        page.Children.Add(Ui.Card("", Strings.Get("WidgetSources"), Strings.Get("WidgetSourcesHint"),
+            Ui.Button(Strings.Get("PageSources"), () => ShowPage(MainPage.Sources))));
         return page;
     }
 
@@ -177,7 +377,7 @@ public partial class MainWindow : Window
         page.Children.Add(Ui.PageTitle(Strings.Get("PageFloating")));
 
         page.Children.Add(Ui.Card("", Strings.Get("FloatingShow"), Strings.Get("FloatingShowHint"),
-            Ui.Toggle(App.Settings.FloatingEnabled, App.SetFloatingEnabled, Strings.Get("FloatingShow"))));
+            Synced(() => App.Settings.FloatingEnabled, Ui.Toggle(App.Settings.FloatingEnabled, App.SetFloatingEnabled, Strings.Get("FloatingShow")))));
 
         // Live preview over a picture: the widget floats over any window.
         _floatingPreview = new WidgetView { Spectrum = App.Spectrum, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
@@ -192,9 +392,9 @@ public partial class MainWindow : Window
         page.Children.Add(Ui.Card("", Strings.Get("FloatingPosition"), Strings.Get("FloatingPositionHint"),
             Ui.Button(Strings.Get("FloatingReset"), App.ResetFloatingPosition, glyph: "")));
         page.Children.Add(Ui.Card("", Strings.Get("FloatingTopmost"), Strings.Get("FloatingTopmostHint"),
-            Ui.Toggle(App.Settings.FloatingTopmost, App.SetFloatingTopmost, Strings.Get("FloatingTopmost"))));
+            Synced(() => App.Settings.FloatingTopmost, Ui.Toggle(App.Settings.FloatingTopmost, App.SetFloatingTopmost, Strings.Get("FloatingTopmost")))));
         page.Children.Add(Ui.Card("", Strings.Get("FloatingLocked"), Strings.Get("FloatingLockedHint"),
-            Ui.Toggle(App.Settings.FloatingLocked, App.SetFloatingLocked, Strings.Get("FloatingLocked"))));
+            Synced(() => App.Settings.FloatingLocked, Ui.Toggle(App.Settings.FloatingLocked, App.SetFloatingLocked, Strings.Get("FloatingLocked")))));
 
         page.Children.Add(Ui.Section(Strings.Get("SectionStyle")));
         // The shadow: on or off, and how dark (the slider is greyed while it is off).
@@ -381,8 +581,10 @@ public partial class MainWindow : Window
                     settings.Theme = theme;
                     settings.Save();
                     App.ApplyTheme(theme);
-                    App.RefreshWidget(); // the menu of the taskbar widget follows
                 })));
+
+        page.Children.Add(Ui.Card("", Strings.Get("MenuQuit"), Strings.Get("QuitDescription"),
+            Ui.Button(Strings.Get("MenuQuit"), App.Quit)));
 
         return page;
     }
@@ -561,9 +763,6 @@ public partial class MainWindow : Window
         texts.Children.Add(source);
         about.Children.Add(texts);
         page.Children.Add(new Border { Style = (Style)Application.Current.FindResource("Card"), Child = about });
-
-        page.Children.Add(Ui.Card("", Strings.Get("MenuQuit"), Strings.Get("QuitDescription"),
-            Ui.Button(Strings.Get("MenuQuit"), App.Quit)));
         return page;
     }
 
@@ -587,6 +786,18 @@ public partial class MainWindow : Window
     {
         RefreshPreviews();
         ShowWeatherState();
+        // Changed elsewhere too (the menu of a widget, of the notification icon): the switches of the pages follow.
+        foreach (var (toggle, isOn) in _synced)
+            Ui.ShowToggle(toggle, isOn());
+    }
+
+    private readonly List<(CheckBox Toggle, Func<bool> IsOn)> _synced = [];
+
+    // A switch whose setting can also change outside this window.
+    private CheckBox Synced(Func<bool> isOn, CheckBox toggle)
+    {
+        _synced.Add((toggle, isOn));
+        return toggle;
     }
 
     private TextBlock? _weatherText;
