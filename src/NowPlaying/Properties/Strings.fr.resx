@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- French. Every key must also exist in the other language (checked by the tests). -->
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AboutDevelopedBy" xml:space="preserve">
+    <value>Développé par </value>
+  </data>
+  <data name="AboutSourceCode" xml:space="preserve">
+    <value>Code source sur GitHub</value>
+  </data>
+  <data name="AboutVersion" xml:space="preserve">
+    <value>Version {0} · licence MIT</value>
+  </data>
+  <data name="Apply" xml:space="preserve">
+    <value>Appliquer</value>
+  </data>
+  <data name="ButtonNext" xml:space="preserve">
+    <value>Suivant</value>
+  </data>
+  <data name="ButtonPlayPause" xml:space="preserve">
+    <value>Lecture / pause</value>
+  </data>
+  <data name="ButtonPrevious" xml:space="preserve">
+    <value>Précédent</value>
+  </data>
+  <data name="Close" xml:space="preserve">
+    <value>Fermer</value>
+  </data>
+  <data name="ColorModeCover" xml:space="preserve">
+    <value>Pochette</value>
+  </data>
+  <data name="ColorModeCustom" xml:space="preserve">
+    <value>Personnalisée</value>
+  </data>
+  <data name="ColorModeFrosted" xml:space="preserve">
+    <value>Verre</value>
+  </data>
+  <data name="ColorModeGlass" xml:space="preserve">
+    <value>Transparent</value>
+  </data>
+  <data name="Copy" xml:space="preserve">
+    <value>Copier</value>
+  </data>
+  <data name="ElementArtist" xml:space="preserve">
+    <value>Artiste</value>
+  </data>
+  <data name="ElementControls" xml:space="preserve">
+    <value>Contrôles</value>
+  </data>
+  <data name="ElementCover" xml:space="preserve">
+    <value>Pochette</value>
+  </data>
+  <data name="ElementProgress" xml:space="preserve">
+    <value>Progression</value>
+  </data>
+  <data name="ElementTimes" xml:space="preserve">
+    <value>Temps</value>
+  </data>
+  <data name="ElementVisualizer" xml:space="preserve">
+    <value>Visualiseur</value>
+  </data>
+  <data name="ErrorUpdate" xml:space="preserve">
+    <value>La mise à jour a échoué : {0}</value>
+  </data>
+  <data name="ErrorUpdateIntegrity" xml:space="preserve">
+    <value>le fichier téléchargé est endommagé, réessayez.</value>
+  </data>
+  <data name="ErrorUpdateOffline" xml:space="preserve">
+    <value>GitHub est injoignable (pas de connexion Internet ?).</value>
+  </data>
+  <data name="ErrorUpdateRateLimited" xml:space="preserve">
+    <value>GitHub limite le nombre de vérifications, réessayez dans un moment.</value>
+  </data>
+  <data name="IdleHide" xml:space="preserve">
+    <value>Cacher le widget</value>
+  </data>
+  <data name="IdleKeepLast" xml:space="preserve">
+    <value>Garder le dernier titre (grisé)</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Langue</value>
+  </data>
+  <data name="LanguageSystem" xml:space="preserve">
+    <value>Langue de Windows (automatique)</value>
+  </data>
+  <data name="LayoutBar" xml:space="preserve">
+    <value>Barre compacte</value>
+  </data>
+  <data name="LayoutCard" xml:space="preserve">
+    <value>Carte</value>
+  </data>
+  <data name="MenuCustomize" xml:space="preserve">
+    <value>Personnaliser…</value>
+  </data>
+  <data name="MenuOpen" xml:space="preserve">
+    <value>Ouvrir NowPlaying</value>
+  </data>
+  <data name="MenuQuit" xml:space="preserve">
+    <value>Quitter NowPlaying</value>
+  </data>
+  <data name="MenuShowWidget" xml:space="preserve">
+    <value>Afficher le widget</value>
+  </data>
+  <data name="MenuSource" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="NothingPlaying" xml:space="preserve">
+    <value>Rien en lecture</value>
+  </data>
+  <data name="NothingPlayingHint" xml:space="preserve">
+    <value>Lancez une musique pour la voir ici</value>
+  </data>
+  <data name="OpenInBrowser" xml:space="preserve">
+    <value>Ouvrir</value>
+  </data>
+  <data name="OpenTaskbarSettings" xml:space="preserve">
+    <value>Paramètres de la barre des tâches</value>
+  </data>
+  <data name="OverlayAddress" xml:space="preserve">
+    <value>Adresse pour OBS</value>
+  </data>
+  <data name="OverlayAddressHint" xml:space="preserve">
+    <value>Source Navigateur · largeur {0}, hauteur {1}</value>
+  </data>
+  <data name="OverlayLayout" xml:space="preserve">
+    <value>Modèle à régler</value>
+  </data>
+  <data name="OverlayLayoutHint" xml:space="preserve">
+    <value>Chaque modèle a ses propres réglages et sa propre adresse</value>
+  </data>
+  <data name="OverlayPort" xml:space="preserve">
+    <value>Port de l&apos;overlay</value>
+  </data>
+  <data name="OverlayPortHint" xml:space="preserve">
+    <value>Seulement sur ce PC (localhost)</value>
+  </data>
+  <data name="OverlayPreviewHint" xml:space="preserve">
+    <value>Aperçu (fond transparent dans OBS)</value>
+  </data>
+  <data name="OverlaySceneBackground" xml:space="preserve">
+    <value>Fond de scène</value>
+  </data>
+  <data name="OverlayServerError" xml:space="preserve">
+    <value>L&apos;overlay ne peut pas démarrer sur le port {0} : {1} Choisissez un autre port dans Général.</value>
+  </data>
+  <data name="PageAbout" xml:space="preserve">
+    <value>À propos</value>
+  </data>
+  <data name="PageGeneral" xml:space="preserve">
+    <value>Général</value>
+  </data>
+  <data name="PageOverlay" xml:space="preserve">
+    <value>Overlay OBS</value>
+  </data>
+  <data name="PageUpdates" xml:space="preserve">
+    <value>Mises à jour</value>
+  </data>
+  <data name="PageWidget" xml:space="preserve">
+    <value>Barre des tâches</value>
+  </data>
+  <data name="PositionLeft" xml:space="preserve">
+    <value>À gauche</value>
+  </data>
+  <data name="PositionNearClock" xml:space="preserve">
+    <value>Près de l&apos;horloge</value>
+  </data>
+  <data name="QuitDescription" xml:space="preserve">
+    <value>Le widget et les overlays s&apos;arrêtent jusqu&apos;au prochain lancement de NowPlaying (menu Démarrer).</value>
+  </data>
+  <data name="SectionBehavior" xml:space="preserve">
+    <value>Comportement</value>
+  </data>
+  <data name="SectionPlace" xml:space="preserve">
+    <value>Emplacement</value>
+  </data>
+  <data name="SectionStyle" xml:space="preserve">
+    <value>Style</value>
+  </data>
+  <data name="SliderResetHint" xml:space="preserve">
+    <value>Double-clic : revenir à {0} {1}</value>
+  </data>
+  <data name="StartWithWindows" xml:space="preserve">
+    <value>Démarrer avec Windows</value>
+  </data>
+  <data name="StartWithWindowsHint" xml:space="preserve">
+    <value>Le widget et les overlays sont prêts dès l&apos;ouverture de session</value>
+  </data>
+  <data name="StyleColor" xml:space="preserve">
+    <value>Couleur</value>
+  </data>
+  <data name="StyleColorHint" xml:space="preserve">
+    <value>« Pochette » prend la couleur dominante de chaque morceau</value>
+  </data>
+  <data name="StyleCorners" xml:space="preserve">
+    <value>Arrondis</value>
+  </data>
+  <data name="StyleCustomColor" xml:space="preserve">
+    <value>Couleur personnalisée</value>
+  </data>
+  <data name="StyleElements" xml:space="preserve">
+    <value>Éléments affichés</value>
+  </data>
+  <data name="StyleFont" xml:space="preserve">
+    <value>Police</value>
+  </data>
+  <data name="StyleFontSize" xml:space="preserve">
+    <value>Taille du texte</value>
+  </data>
+  <data name="StyleOpacity" xml:space="preserve">
+    <value>Opacité</value>
+  </data>
+  <data name="StyleText" xml:space="preserve">
+    <value>Texte</value>
+  </data>
+  <data name="StyleTextHint" xml:space="preserve">
+    <value>Police et taille</value>
+  </data>
+  <data name="StyleVisualizer" xml:space="preserve">
+    <value>Visualiseur</value>
+  </data>
+  <data name="StyleVisualizerHint" xml:space="preserve">
+    <value>Le spectre écoute le son du PC ; l&apos;animation ne consomme rien</value>
+  </data>
+  <data name="StyleWidth" xml:space="preserve">
+    <value>Largeur</value>
+  </data>
+  <data name="Theme" xml:space="preserve">
+    <value>Thème de l&apos;application</value>
+  </data>
+  <data name="ThemeDark" xml:space="preserve">
+    <value>Sombre</value>
+  </data>
+  <data name="ThemeLight" xml:space="preserve">
+    <value>Clair</value>
+  </data>
+  <data name="ThemeSystem" xml:space="preserve">
+    <value>Thème de Windows (automatique)</value>
+  </data>
+  <data name="UpdateBarText" xml:space="preserve">
+    <value>NowPlaying {0} est disponible.</value>
+  </data>
+  <data name="UpdateCancelled" xml:space="preserve">
+    <value>La mise à jour n&apos;a pas été installée.</value>
+  </data>
+  <data name="UpdateChannel" xml:space="preserve">
+    <value>Canal de mise à jour</value>
+  </data>
+  <data name="UpdateChannelBeta" xml:space="preserve">
+    <value>Bêta</value>
+  </data>
+  <data name="UpdateChannelDescription" xml:space="preserve">
+    <value>Les versions bêta reçoivent les nouveautés en avance, mais peuvent être moins stables. En revenant au canal stable, vous gardez la bêta jusqu&apos;à la version stable suivante.</value>
+  </data>
+  <data name="UpdateChannelStable" xml:space="preserve">
+    <value>Stable</value>
+  </data>
+  <data name="UpdateCheck" xml:space="preserve">
+    <value>Rechercher des mises à jour</value>
+  </data>
+  <data name="UpdateCheckAtStartup" xml:space="preserve">
+    <value>Rechercher les mises à jour au démarrage</value>
+  </data>
+  <data name="UpdateCheckAtStartupDescription" xml:space="preserve">
+    <value>Interroge GitHub à chaque lancement de l&apos;application pour connaître la dernière version.</value>
+  </data>
+  <data name="UpdateDownloading" xml:space="preserve">
+    <value>Téléchargement de la mise à jour…</value>
+  </data>
+  <data name="UpdateInstall" xml:space="preserve">
+    <value>Mettre à jour</value>
+  </data>
+  <data name="UpdateStarting" xml:space="preserve">
+    <value>Installation… acceptez la demande de Windows pour continuer.</value>
+  </data>
+  <data name="UpdateStatusAvailable" xml:space="preserve">
+    <value>Version {0} · la version {1} est disponible.</value>
+  </data>
+  <data name="UpdateStatusChecking" xml:space="preserve">
+    <value>Recherche de mises à jour…</value>
+  </data>
+  <data name="UpdateStatusFailed" xml:space="preserve">
+    <value>Version {0} · impossible de rechercher les mises à jour : {1}</value>
+  </data>
+  <data name="UpdateStatusIdle" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+  <data name="UpdateStatusUpToDate" xml:space="preserve">
+    <value>Version {0} · NowPlaying est à jour.</value>
+  </data>
+  <data name="UpdateWhatsNew" xml:space="preserve">
+    <value>Nouveautés</value>
+  </data>
+  <data name="VisualizerAnimation" xml:space="preserve">
+    <value>Animation</value>
+  </data>
+  <data name="VisualizerSpectrum" xml:space="preserve">
+    <value>Spectre réel</value>
+  </data>
+  <data name="WidgetIdle" xml:space="preserve">
+    <value>Quand rien ne joue</value>
+  </data>
+  <data name="WidgetIdleHint" xml:space="preserve">
+    <value>En pause, le widget reste affiché</value>
+  </data>
+  <data name="WidgetOffset" xml:space="preserve">
+    <value>Décalage</value>
+  </data>
+  <data name="WidgetOffsetHint" xml:space="preserve">
+    <value>Pour laisser la place à un autre élément</value>
+  </data>
+  <data name="WidgetPosition" xml:space="preserve">
+    <value>Position</value>
+  </data>
+  <data name="WidgetPositionHint" xml:space="preserve">
+    <value>À gauche : la place libre quand les icônes sont centrées</value>
+  </data>
+  <data name="WidgetPreviewHint" xml:space="preserve">
+    <value>Aperçu : survolez-le, molette pour le volume</value>
+  </data>
+  <data name="WidgetShow" xml:space="preserve">
+    <value>Afficher le widget dans la barre des tâches</value>
+  </data>
+  <data name="WidgetShowHint" xml:space="preserve">
+    <value>Désactivé, seuls les overlays OBS fonctionnent</value>
+  </data>
+  <data name="WidgetSources" xml:space="preserve">
+    <value>Plusieurs applications jouent</value>
+  </data>
+  <data name="WidgetSourcesHint" xml:space="preserve">
+    <value>La dernière lancée s&apos;affiche ; clic droit sur le widget pour en choisir une autre</value>
+  </data>
+  <data name="WindowsWeather" xml:space="preserve">
+    <value>Météo de Windows</value>
+  </data>
+  <data name="WindowsWeatherHidden" xml:space="preserve">
+    <value>Masquée : le widget est à sa place. Réactivez « Widgets » dans les paramètres de la barre des tâches pour la retrouver.</value>
+  </data>
+  <data name="WindowsWeatherShown" xml:space="preserve">
+    <value>À gauche de la barre des tâches. Désactivez « Widgets » dans les paramètres de la barre des tâches et le widget prend sa place.</value>
+  </data>
+</root>

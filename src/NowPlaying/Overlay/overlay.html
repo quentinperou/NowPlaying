@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>NowPlaying</title>
+<!-- The overlay for OBS (a Browser Source), served by the app: /bar (bar layout) or /card (card layout). Its style
+     and what plays come from the app as events; the background stays transparent. -->
+<link rel="stylesheet" href="/overlay.css">
+</head>
+<body>
+<div id="overlay" class="hidden">
+  <div class="cover"></div>
+  <div class="info">
+    <div class="title"></div>
+    <div class="artist"></div>
+    <div class="prog"><span class="time t0"></span><div class="bar"><div class="fill"></div></div><span class="time t1"></span></div>
+  </div>
+  <div class="viz"></div>
+</div>
+<script src="/overlay.js"></script>
+</body>
+</html>

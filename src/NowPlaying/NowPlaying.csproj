@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- The Windows 10 2004 SDK projection gives Windows.Media.Control: the media sessions of every app (what plays,
+         its cover, play / pause / next / seek). -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>NowPlaying</AssemblyName>
+    <RootNamespace>NowPlaying</RootNamespace>
+    <ApplicationIcon>Assets\NowPlaying.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Product>NowPlaying</Product>
+    <SatelliteResourceLanguages>fr</SatelliteResourceLanguages>
+    <!-- Application.ThemeMode (Windows 11 Fluent theme) is still marked experimental in WPF .NET 10. -->
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+
+    <!-- The app stays in the taskbar all day: as light as it can be. No background GC thread (the heap is small),
+         and code compiled ahead of time. -->
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <PublishReadyToRun>true</PublishReadyToRun>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\NowPlaying.ico" />
+    <Resource Include="Assets\NowPlaying.png" />
+    <!-- The overlay pages, served to OBS by Services\OverlayServer.cs. -->
+    <EmbeddedResource Include="Overlay\*" LogicalName="Overlay.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Core Audio (the volume of the app that plays) and WASAPI loopback (the sound of the PC, for the spectrum).
+         MIT. -->
+    <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- WPF projects do not import System.IO implicitly. -->
+    <Using Include="System.IO" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NowPlaying.Core\NowPlaying.Core.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,114 @@
+<UserControl x:Class="NowPlaying.Controls.WidgetView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:NowPlaying"
+             Height="40" Width="280" Background="Transparent" Focusable="False">
+  <!-- The widget as on the mock-up: at rest the cover, the title, the artist and the bars; on hover the progress and
+       the controls; with the wheel the volume of the app that plays. Colors are set from the style in code. -->
+  <UserControl.Resources>
+    <SolidColorBrush x:Key="WidgetHoverBrush" Color="#1CFFFFFF" />
+    <Style x:Key="WidgetButton" TargetType="Button">
+      <Setter Property="Focusable" Value="False" />
+      <Setter Property="Width" Value="26" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Face" CornerRadius="4" Background="Transparent">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Face" Property="Background" Value="{DynamicResource WidgetHoverBrush}" />
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="Face" Property="Opacity" Value="0.35" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style x:Key="Glyph" TargetType="Path">
+      <Setter Property="Width" Value="12" />
+      <Setter Property="Height" Value="12" />
+      <Setter Property="Stretch" Value="Uniform" />
+    </Style>
+  </UserControl.Resources>
+
+  <Border x:Name="Root" CornerRadius="6" Padding="4,0,8,0">
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto" />
+        <ColumnDefinition Width="*" />
+      </Grid.ColumnDefinitions>
+
+      <Border x:Name="CoverBox" Width="32" Height="32" CornerRadius="4" Margin="0,0,10,0" VerticalAlignment="Center">
+        <Border.Background>
+          <ImageBrush x:Name="CoverBrush" Stretch="UniformToFill" />
+        </Border.Background>
+      </Border>
+
+      <!-- At rest -->
+      <Grid x:Name="RestPanel" Grid.Column="1">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <StackPanel VerticalAlignment="Center">
+          <TextBlock x:Name="TitleText" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+          <TextBlock x:Name="ArtistText" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+        <Border x:Name="BarsPanel" Grid.Column="1" Height="22" Margin="8,0,0,0" VerticalAlignment="Center" />
+      </Grid>
+
+      <!-- On hover, and with the wheel -->
+      <DockPanel x:Name="ControlPanel" Grid.Column="1" Visibility="Collapsed">
+        <Button x:Name="NextButton" DockPanel.Dock="Right" Style="{StaticResource WidgetButton}" Click="Next_Click"
+                AutomationProperties.Name="{local:Tr ButtonNext}">
+          <Path x:Name="NextGlyph" Style="{StaticResource Glyph}" Data="{StaticResource GlyphNext}" />
+        </Button>
+        <Button x:Name="PlayButton" DockPanel.Dock="Right" Style="{StaticResource WidgetButton}" Click="Play_Click"
+                AutomationProperties.Name="{local:Tr ButtonPlayPause}">
+          <Path x:Name="PlayGlyph" Style="{StaticResource Glyph}" Data="{StaticResource GlyphPause}" />
+        </Button>
+        <Button x:Name="PreviousButton" DockPanel.Dock="Right" Style="{StaticResource WidgetButton}" Click="Previous_Click"
+                AutomationProperties.Name="{local:Tr ButtonPrevious}">
+          <Path x:Name="PreviousGlyph" Style="{StaticResource Glyph}" Data="{StaticResource GlyphPrevious}" />
+        </Button>
+        <Grid Margin="0,0,6,0">
+          <Grid x:Name="SeekPanel">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="ElapsedText" FontSize="11" VerticalAlignment="Center" Margin="0,0,7,0" />
+            <Grid x:Name="SeekTrack" Grid.Column="1" Height="16" Background="Transparent" Cursor="Hand"
+                  MouseLeftButtonDown="Seek_MouseDown">
+              <Border x:Name="SeekBack" Height="4" CornerRadius="2" VerticalAlignment="Center" />
+              <Border x:Name="SeekFill" Height="4" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Center" />
+            </Grid>
+            <TextBlock x:Name="LengthText" Grid.Column="2" FontSize="11" VerticalAlignment="Center" Margin="7,0,0,0" />
+          </Grid>
+          <Grid x:Name="VolumePanel" Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" />
+              <ColumnDefinition Width="*" />
+              <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="VolumeIcon" FontFamily="{StaticResource IconFont}" FontSize="13" Text="&#xE767;"
+                       VerticalAlignment="Center" Margin="0,0,7,0" />
+            <Grid x:Name="VolumeTrack" Grid.Column="1" Height="16" Background="Transparent" Cursor="Hand"
+                  MouseLeftButtonDown="Volume_MouseDown">
+              <Border x:Name="VolumeBack" Height="4" CornerRadius="2" VerticalAlignment="Center" />
+              <Border x:Name="VolumeFill" Height="4" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Center" />
+            </Grid>
+            <TextBlock x:Name="VolumeText" Grid.Column="2" FontSize="11" VerticalAlignment="Center" Margin="7,0,0,0" MinWidth="30"
+                       TextAlignment="Right" />
+          </Grid>
+        </Grid>
+      </DockPanel>
+    </Grid>
+  </Border>
+</UserControl>
