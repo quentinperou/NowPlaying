@@ -25,7 +25,8 @@ html, body { margin: 0; background: transparent; overflow: hidden; }
 #overlay.bar-layout { height: 76px; gap: 14px; padding: 0 18px 0 12px; }
 .bar-layout .cover { width: 52px; height: 52px; border-radius: 8px; }
 .bar-layout .artist { font-size: .82em; }
-.bar-layout .prog { display: none; }
+.bar-layout .prog { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+.bar-layout .time { font-size: 11px; }
 .bar-layout .viz { height: 36px; gap: 3px; }
 .bar-layout .viz i { width: 4px; height: 4px; }
 
@@ -37,4 +38,10 @@ html, body { margin: 0; background: transparent; overflow: hidden; }
 .card-layout .prog { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
 .card-layout .viz { display: none; }
 
-.no-cover .cover, .no-artist .artist, .no-viz .viz, .no-progress .prog, .no-times .time { display: none !important; }
+/* A live stream: "live" instead of the times and the bar. */
+.live { display: none; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: .4px; }
+.live i { width: 7px; height: 7px; border-radius: 50%; background: #E5484D; }
+.is-live .live { display: inline-flex; }
+.is-live .bar, .is-live .time { display: none; }
+
+.no-cover .cover, .no-artist .artist, .no-viz .viz, .no-progress .prog, .no-times .time, .no-length .prog { display: none !important; }

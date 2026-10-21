@@ -120,9 +120,20 @@ public sealed class WidgetStyle : SurfaceStyle
 
     public IdleMode Idle { get; set; } = IdleMode.Hide;
 
+    /// <summary>The floating widget only: what is behind it shows blurred, under a veil of the style's opacity.</summary>
+    public bool Blur { get; set; }
+
+    /// <summary>The floating widget only: a shadow under it, <see cref="ShadowOpacity"/> percent dark.</summary>
+    public bool Shadow { get; set; }
+
+    public int ShadowOpacity { get; set; } = 40;
+
     public override (int Min, int Max) WidthRange => (200, 420);
     public override (int Min, int Max) RadiusRange => (0, 20);
     public override (int Min, int Max) FontSizeRange => (10, 15);
+
+    /// <summary>The floating widget: over any window, so frosted dark glass by default (the blur behind, a light veil).</summary>
+    public static WidgetStyle DefaultFloating() => new() { Width = 300, CornerRadius = 10, Blur = true, Opacity = 40, Shadow = true };
 
     public WidgetStyle Normalized()
     {
@@ -130,6 +141,7 @@ public sealed class WidgetStyle : SurfaceStyle
         if (!Enum.IsDefined(Position)) Position = WidgetPosition.Left;
         if (!Enum.IsDefined(Idle)) Idle = IdleMode.Hide;
         Offset = Math.Clamp(Offset, 0, 600);
+        ShadowOpacity = Math.Clamp(ShadowOpacity, 10, 100);
         return this;
     }
 }

@@ -28,11 +28,40 @@ internal sealed class OverlayServer : IDisposable
     private volatile byte[]? _cover;
     private volatile string _coverType = "image/png";
 
-    private sealed class Client(HttpListenerResponse response, OverlayLayout layout)
+    // isPage: an overlay page (OBS); otherwise the widget of the Windows Widgets board (NowPlaying.Widgets).
+    private sealed class Client(HttpListenerResponse response, OverlayLayout layout, bool isPage)
     {
         public HttpListenerResponse Response { get; } = response;
         public OverlayLayout Layout { get; } = layout;
+        public bool IsPage { get; } = isPage;
         public SemaphoreSlim Gate { get; } = new(1, 1);
+    }
+
+    private volatile bool _pagesEnabled;
+
+    /// <summary>
+    /// Whether the overlay pages are served (the overlay is on). The server runs either way: the widget of the Windows
+    /// Widgets board gets what plays from it too. Turned off, the open pages are closed.
+    /// </summary>
+    public bool PagesEnabled
+    {
+        get => _pagesEnabled;
+        set
+        {
+            _pagesEnabled = value;
+            if (value)
+                return;
+            List<Client> pages;
+            lock (_lock)
+            {
+                pages = [.. _clients.Where(c => c.IsPage)];
+                _clients.RemoveAll(c => c.IsPage);
+            }
+            foreach (var page in pages)
+                Close(page);
+            if (pages.Count > 0)
+                ClientsChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     public int Port { get; private set; }
@@ -44,6 +73,9 @@ internal sealed class OverlayServer : IDisposable
 
     /// <summary>A page connected or went away (on a request thread).</summary>
     public event EventHandler? ClientsChanged;
+
+    /// <summary>A button of the Windows widget: playpause, next or previous (on a request thread).</summary>
+    public event Action<string>? CommandReceived;
 
     public static string Url(int port, OverlayLayout layout) =>
         $"http://localhost:{port}/{(layout == OverlayLayout.Bar ? "bar" : "card")}";
@@ -94,7 +126,7 @@ internal sealed class OverlayServer : IDisposable
     public bool HasClients(OverlayLayout layout)
     {
         lock (_lock)
-            return _clients.Any(c => c.Layout == layout);
+            return _clients.Any(c => c.IsPage && c.Layout == layout);
     }
 
     // ---------------------------------------------------------------- What the pages show (UI thread)
@@ -136,9 +168,10 @@ internal sealed class OverlayServer : IDisposable
             showCover = style.ShowCover,
             showArtist = style.ShowArtist,
             showVisualizer = layout == OverlayLayout.Bar && style.ShowVisualizer,
-            showProgress = layout == OverlayLayout.Card && style.ShowProgress,
-            showTimes = layout == OverlayLayout.Card && style.ShowTimes,
+            showProgress = style.ShowProgress,
+            showTimes = style.ShowTimes,
             visualizer = style.Visualizer == VisualizerMode.Spectrum ? "spectrum" : "animation",
+            liveText = Strings.Get("Live"),
         }, Json);
         if (layout == OverlayLayout.Bar)
             _barStyleJson = json;
@@ -186,6 +219,14 @@ internal sealed class OverlayServer : IDisposable
         try
         {
             string path = (context.Request.Url?.AbsolutePath ?? "/").TrimEnd('/').ToLowerInvariant();
+            string? layout = context.Request.QueryString["layout"];
+            bool forPage = path is "" or "/bar" or "/card" or "/overlay.js" or "/overlay.css" || (path == "/events" && layout != "widget");
+            if (forPage && !_pagesEnabled)
+            {
+                response.StatusCode = 404;
+                await SendText(response, "The OBS overlay is off in NowPlaying (NowPlaying › Overlay OBS).", "text/plain; charset=utf-8");
+                return;
+            }
             switch (path)
             {
                 case "":
@@ -207,7 +248,18 @@ internal sealed class OverlayServer : IDisposable
                         End(response, 404);
                     break;
                 case "/events":
-                    await OpenEvents(response, context.Request.QueryString["layout"] == "bar" ? OverlayLayout.Bar : OverlayLayout.Card);
+                    await OpenEvents(response, layout == "bar" ? OverlayLayout.Bar : OverlayLayout.Card, isPage: layout != "widget");
+                    break;
+                case "/api/playpause" or "/api/next" or "/api/previous":
+                    // A POST with a header of our own: a web page cannot send one to this server without asking first
+                    // (CORS), and is never answered yes, so no site opened in a browser can press these buttons.
+                    if (context.Request.HttpMethod != "POST" || context.Request.Headers["X-NowPlaying"] is null)
+                    {
+                        End(response, 403);
+                        break;
+                    }
+                    CommandReceived?.Invoke(path[5..]);
+                    End(response, 204);
                     break;
                 default:
                     End(response, 404);
@@ -220,12 +272,12 @@ internal sealed class OverlayServer : IDisposable
         }
     }
 
-    private async Task OpenEvents(HttpListenerResponse response, OverlayLayout layout)
+    private async Task OpenEvents(HttpListenerResponse response, OverlayLayout layout, bool isPage)
     {
         response.ContentType = "text/event-stream; charset=utf-8";
         response.Headers["Cache-Control"] = "no-cache";
         response.SendChunked = true;
-        var client = new Client(response, layout);
+        var client = new Client(response, layout, isPage);
         // The page starts with the style and what plays now.
         string style = layout == OverlayLayout.Bar ? _barStyleJson : _cardStyleJson;
         await client.Gate.WaitAsync();

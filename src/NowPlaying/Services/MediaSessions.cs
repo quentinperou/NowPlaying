@@ -288,7 +288,7 @@ internal sealed class MediaSessions
     }
 
     // The cover at 256 px at most (the widget shows 32, the card 114 at 200 %), and its color.
-    private static (BitmapSource?, Rgb?) Decode(byte[]? bytes)
+    internal static (BitmapSource?, Rgb?) Decode(byte[]? bytes)
     {
         if (bytes is not { Length: > 0 })
             return (null, null);

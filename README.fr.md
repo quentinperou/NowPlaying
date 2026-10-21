@@ -6,7 +6,7 @@
 
 <p align="center">
   Ce qui est en lecture, directement dans la barre des tâches de Windows 11, quelle que soit l'application (Spotify,
-  YouTube, Deezer…), et en overlay pour OBS Studio.
+  YouTube, Deezer…) : aussi en widget flottant, dans le tableau Widgets, et en overlay pour OBS Studio.
 </p>
 
 <p align="center">
@@ -19,8 +19,8 @@
 
 ---
 
-> **Début du développement.** La version 0.1 affiche ce qui joue dans la barre des tâches et dans OBS, avec la
-> personnalisation. Aimer un morceau (Spotify) et les barres des tâches des autres écrans viendront ensuite.
+> **Début du développement.** La version 0.2 ajoute un widget flottant et un widget pour le tableau Widgets de
+> Windows. Aimer un morceau (Spotify) et les barres des tâches des autres écrans viendront ensuite.
 
 ## Fonctionnalités
 
@@ -28,26 +28,40 @@
 
 - La **pochette, le titre et l'artiste** de ce qui joue, depuis toute application qui l'indique à Windows : Spotify,
   un navigateur (YouTube, Deezer, SoundCloud…), Lecteur multimédia, Apple Music…
-- **Au survol** : précédent, lecture / pause, suivant, et la barre de progression (un clic pour avancer).
+- **Au survol** : précédent, lecture / pause, suivant, et la barre de progression (un clic pour avancer ; « EN DIRECT » pour un direct).
 - **Molette** : le volume de l'application qui joue, pas celui de tout le PC.
 - Un **visualiseur** : le vrai spectre du son, ou une animation calme.
 - Le texte reste lisible : sa couleur suit ce qu'il y a vraiment derrière le widget (barre des tâches claire ou
   sombre, colorée ou transparente).
 - Plusieurs applications en lecture : la dernière lancée s'affiche ; **clic droit** pour en choisir une autre.
-- À gauche, après la météo de Windows, ou à côté de l'horloge. Caché par-dessus les applications en plein écran.
-  Désactivez la météo de Windows (l'application ouvre la bonne page des paramètres) et le widget prend sa place.
+- À gauche, après la météo de Windows, ou à côté de l'horloge. Caché par-dessus les applications en plein écran,
+  visible même menu Démarrer ouvert. Désactivez la météo de Windows (l'application ouvre la bonne page des
+  paramètres) et le widget prend sa place.
+
+### Sur le bureau
+
+- Un **widget flottant**, où vous voulez sur l'écran : glissez-le, gardez-le au-dessus des fenêtres ou dessous,
+  verrouillez sa place.
+- **Verre dépoli** (ce qui est derrière apparaît flou), transparent, la couleur de la pochette ou la vôtre ; une ombre
+  si vous voulez.
+
+### Dans le tableau Widgets
+
+- Un widget NowPlaying pour le **tableau Widgets de Windows** (Win + W) : la pochette sur un fond flouté, les
+  commandes, trois tailles, clair ou sombre comme le tableau.
 
 ### Pour les streamers
 
 - Un **overlay pour OBS Studio** : une source Navigateur qui pointe vers une page de l'application, transparente,
   mise à jour en direct.
-- Deux modèles : une **barre compacte** (comme dans la barre des tâches) et une **carte** (pochette, titre, artiste,
-  progression).
+- Deux modèles : une **barre compacte** (comme dans la barre des tâches) et une **carte**, chacun avec le temps et la
+  progression si vous voulez.
+- Désactivé tant que vous ne l'activez pas (**NowPlaying → Overlay OBS**).
 
 ### À votre style
 
-- Le widget et chaque overlay ont **leur propre style** : la couleur de la pochette, verre ou votre couleur, largeur,
-  coins arrondis, police, et les éléments à afficher.
+- Chaque widget et chaque overlay a **son propre style** : la couleur de la pochette, verre ou votre couleur,
+  largeur, coins arrondis, police, et les éléments à afficher.
 
 ### Et aussi
 
@@ -59,6 +73,7 @@
 ### À venir
 
 - [x] Widget de la barre des tâches, overlay OBS, personnalisation.
+- [x] Widget flottant, widget du tableau Widgets.
 - [ ] Aimer le morceau (Spotify).
 - [ ] Les barres des tâches des autres écrans.
 
@@ -70,10 +85,12 @@
 3. Acceptez la demande d'administrateur (UAC).
 
 L'installeur copie l'application dans `C:\Program Files\NowPlaying`, l'ajoute au menu Démarrer, et propose d'installer
-le **.NET 10 Desktop Runtime** de Microsoft s'il est absent. À son premier lancement, l'application active
-*Démarrer avec Windows*.
+le **.NET 10 Desktop Runtime** de Microsoft s'il est absent. Sur Windows 11, il ajoute aussi le widget au tableau
+Widgets (**+** dans le tableau, puis NowPlaying). À son premier lancement, l'application active *Démarrer avec
+Windows*.
 
-Dans OBS : **Sources → + → Navigateur**, puis collez l'adresse donnée dans **NowPlaying → Overlay OBS** (par exemple
+Dans OBS : activez l'overlay dans **NowPlaying → Overlay OBS**, puis **Sources → + → Navigateur**, et collez
+l'adresse donnée (par exemple
 `http://localhost:6740/card`) avec la taille indiquée.
 
 Désinstaller : **Paramètres → Applications → Applications installées → NowPlaying**.
@@ -88,6 +105,7 @@ Désinstaller : **Paramètres → Applications → Applications installées → 
 |-------|------|--------------|
 | **Git** | Récupérer le code | `winget install Git.Git` |
 | **.NET 10 SDK** | Compiler l'application (C# / WPF) et lancer les tests | `winget install Microsoft.DotNet.SDK.10` |
+| **Windows SDK** | `makeappx`, pour le paquet du tableau Widgets | `winget install Microsoft.WindowsSDK.10.0.26100` |
 | **Inno Setup 6** | Construire l'installeur | `winget install JRSoftware.InnoSetup` |
 
 ### Compiler
@@ -96,8 +114,9 @@ Désinstaller : **Paramètres → Applications → Applications installées → 
 .\scripts\build.ps1
 ```
 
-Le script lance les tests, puis écrit `dist\app\` (l'application, dépendante du runtime, ReadyToRun) et
-`dist\NowPlaying-Setup-<version>.exe`. Options : `-SkipTests`, `-NoInstaller`.
+Le script lance les tests, puis écrit `dist\app\` (l'application et le widget du tableau Widgets, dépendants du
+runtime, ReadyToRun), `dist\NowPlaying.Widgets.msix` et `dist\NowPlaying-Setup-<version>.exe`. Options :
+`-SkipTests`, `-NoInstaller`.
 
 ### Pendant le développement
 
@@ -117,8 +136,9 @@ src/
   NowPlaying.Core/   Logique sans interface : quel lecteur afficher, position entre deux annonces, couleur de la
                      pochette, spectre (FFT), styles du widget et des overlays, noms des applications, versions GitHub
   NowPlaying/        Application WPF : sessions média de Windows, volume par application et son du PC (NAudio),
-                     la fenêtre du widget sur la barre des tâches, le serveur et les pages de l'overlay (Overlay/),
-                     la fenêtre de l'application, les mises à jour
+                     le widget de la barre des tâches (dans son propre processus), le widget flottant, le serveur
+                     et les pages de l'overlay (Overlay/), la fenêtre de l'application, les mises à jour
+  NowPlaying.Widgets/ Le widget du tableau Widgets de Windows (lancé par Windows) et son paquet (package/)
 installer/           Script Inno Setup
 scripts/             build.ps1, make-icons.ps1
 tests/               Tests unitaires (xUnit)
@@ -143,14 +163,16 @@ tests vérifient que les deux ont les mêmes clés et les mêmes paramètres. Me
 
 ## Confidentialité
 
-Rien de ce que vous écoutez ne quitte votre ordinateur. Les pages de l'overlay sont servies sur `localhost`
-uniquement : les autres appareils de votre réseau n'y ont pas accès. Pour le spectre, le son du PC est analysé en
+Rien de ce que vous écoutez ne quitte votre ordinateur. Les pages de l'overlay (quand il est activé) et le widget du
+tableau Widgets reçoivent ce qui joue sur `localhost` uniquement : les autres appareils de votre réseau n'y ont pas
+accès. Pour le spectre, le son du PC est analysé en
 mémoire pendant que les barres sont affichées, jamais enregistré ni envoyé. Le seul accès réseau est la **recherche de
 mises à jour** sur GitHub (`api.github.com`), désactivable dans **Général**.
 
 ## Licence
 
-[MIT](LICENSE.md). Utilise [NAudio](https://github.com/naudio/NAudio) (MIT).
+[MIT](LICENSE.md). Utilise [NAudio](https://github.com/naudio/NAudio) (MIT) et le composant widgets du
+[Windows App SDK](https://github.com/microsoft/WindowsAppSDK) (Microsoft Software License Terms, redistribuable).
 
 ## Crédits
 

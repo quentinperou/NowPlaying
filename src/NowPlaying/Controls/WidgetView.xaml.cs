@@ -79,8 +79,13 @@ public partial class WidgetView : UserControl
     /// <summary>The sound of the PC for the real spectrum; null: the bars never move (a preview without sound).</summary>
     internal AudioSpectrum? Spectrum { get; set; }
 
-    public void ApplyStyle(WidgetStyle style, SurfaceColors colors)
+    /// <param name="frostedRadius">
+    /// Over a blurred background (the floating widget, see <see cref="FloatingWidget.SetLook"/>): its corners, a light
+    /// rim brighter at the top and a sheen, as light catches a pane of glass.
+    /// </param>
+    public void ApplyStyle(WidgetStyle style, SurfaceColors colors, double? frostedRadius = null)
     {
+        bool frosted = frostedRadius is not null;
         bool visualizerChanged = style.Visualizer != _style.Visualizer;
         if (visualizerChanged)
             StopFrames(); // the next start holds the spectrum, or not
@@ -88,9 +93,11 @@ public partial class WidgetView : UserControl
         _colors = colors;
 
         Width = style.Width;
-        Root.CornerRadius = new CornerRadius(style.CornerRadius);
+        Root.CornerRadius = new CornerRadius(frostedRadius ?? style.CornerRadius);
         CoverBox.CornerRadius = new CornerRadius(Math.Min(4, Math.Max(2, style.CornerRadius)));
-        Root.Background = Brush(colors.Background);
+        Root.Background = frosted ? Sheen(colors.Background) : Brush(colors.Background);
+        Root.BorderThickness = new Thickness(frosted ? 1 : 0);
+        Root.BorderBrush = frosted ? Rim : null;
         var text = Brush(colors.Text);
         var secondary = Brush(colors.SecondaryText);
         var track = Brush(colors.Track);
@@ -102,6 +109,7 @@ public partial class WidgetView : UserControl
         TitleText.Foreground = text;
         ArtistText.Foreground = secondary;
         ElapsedText.Foreground = LengthText.Foreground = VolumeText.Foreground = VolumeIcon.Foreground = secondary;
+        LiveText.Foreground = text;
         SeekBack.Background = VolumeBack.Background = track;
         SeekFill.Background = VolumeFill.Background = text;
         PreviousGlyph.Fill = PlayGlyph.Fill = NextGlyph.Fill = text;
@@ -127,6 +135,7 @@ public partial class WidgetView : UserControl
         _idle = idle;
         TitleText.Text = media?.Title ?? "";
         ArtistText.Text = media?.Artist ?? "";
+        LiveText.Text = Strings.Get("Live");
         if (coverChanged)
             _greyCover = null;
         CoverBrush.ImageSource = media?.Cover is { } cover ? (idle ? GreyCover(cover) : cover) : null;
@@ -167,7 +176,10 @@ public partial class WidgetView : UserControl
         bool active = !_idle && _media is not null && (_hover || ShowsVolume || ForcedState == "hover");
         RestPanel.Visibility = active ? Visibility.Collapsed : Visibility.Visible;
         ControlPanel.Visibility = active ? Visibility.Visible : Visibility.Collapsed;
-        SeekPanel.Visibility = ShowsVolume ? Visibility.Collapsed : Visibility.Visible;
+        // No length: a live stream if the position goes on, else a player that tells nothing (no progress then).
+        var progress = Progress(_media);
+        SeekPanel.Visibility = !ShowsVolume && progress == ProgressKind.Track ? Visibility.Visible : Visibility.Collapsed;
+        LivePanel.Visibility = !ShowsVolume && progress == ProgressKind.Live ? Visibility.Visible : Visibility.Collapsed;
         VolumePanel.Visibility = ShowsVolume ? Visibility.Visible : Visibility.Collapsed;
         UpdateTimers();
     }
@@ -230,10 +242,17 @@ public partial class WidgetView : UserControl
 
     private void FlattenBars() => _bars.Flatten();
 
+    /// <summary>What the progress shows (see <see cref="Timeline.Kind"/>).</summary>
+    internal static ProgressKind Progress(MediaSnapshot? media) =>
+        media is null ? ProgressKind.None : Timeline.Kind(media.PositionNow, media.Duration);
+
     private void UpdateProgress()
     {
         if (_media is null)
             return;
+        // A live stream that starts reporting its position: "live" shows.
+        if ((LivePanel.Visibility == Visibility.Visible) != (Progress(_media) == ProgressKind.Live && !ShowsVolume) && ControlPanel.IsVisible)
+            UpdateState();
         var position = _media.PositionNow;
         ElapsedText.Text = Timeline.Format(position);
         LengthText.Text = Timeline.Format(_media.Duration);
@@ -262,6 +281,15 @@ public partial class WidgetView : UserControl
         VolumeRequested?.Invoke(this, Math.Clamp(e.GetPosition(VolumeTrack).X / Math.Max(1, VolumeTrack.ActualWidth), 0, 1));
     }
 
+    /// <summary>Whether <paramref name="element"/> is in the progress or the volume bar (they act on the press itself).</summary>
+    internal bool IsOnTrack(DependencyObject? element)
+    {
+        for (; element is not null; element = element is Visual ? VisualTreeHelper.GetParent(element) : LogicalTreeHelper.GetParent(element))
+            if (element == SeekTrack || element == VolumeTrack)
+                return true;
+        return false;
+    }
+
     // ---------------------------------------------------------------- Helpers
 
     private void CoverPlaceholder(Brush placeholder)
@@ -282,6 +310,25 @@ public partial class WidgetView : UserControl
             _greyCover = grey;
         }
         return _greyCover;
+    }
+
+    private static readonly Brush Rim = Frozen(new LinearGradientBrush(
+        [new GradientStop(Color.FromArgb(120, 255, 255, 255), 0), new GradientStop(Color.FromArgb(28, 255, 255, 255), 1)], 90));
+
+    // The background a little lighter at the top.
+    private static Brush Sheen(Argb background)
+    {
+        var c = background.Color;
+        byte Lighter(byte v) => (byte)(v + (255 - v) * 0.16);
+        var top = Color.FromArgb(background.A, Lighter(c.R), Lighter(c.G), Lighter(c.B));
+        var bottom = Color.FromArgb(background.A, c.R, c.G, c.B);
+        return Frozen(new LinearGradientBrush([new GradientStop(top, 0), new GradientStop(bottom, 0.7)], 90));
+    }
+
+    private static Brush Frozen(Brush brush)
+    {
+        brush.Freeze();
+        return brush;
     }
 
     internal static SolidColorBrush Brush(Argb color)

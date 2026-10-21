@@ -12,14 +12,16 @@ public readonly record struct SurfaceColors(Argb Background, Argb Text, Argb Sec
 {
     /// <summary>
     /// <paramref name="onDarkSurface"/>: the widget on a dark taskbar (the overlays always count as dark: a stream
-    /// scene). <paramref name="coverColor"/>: the color of the current cover, if known.
+    /// scene). <paramref name="coverColor"/>: the color of the current cover, if known. <paramref name="glassOpacity"/>:
+    /// the dark glass of the overlays as opaque as the style's opacity (the floating widget, whose veil the user sets
+    /// over the blur behind it), rather than its fixed veil.
     /// </summary>
-    public static SurfaceColors Resolve(SurfaceStyle style, Rgb? coverColor, bool onDarkSurface, bool overlay)
+    public static SurfaceColors Resolve(SurfaceStyle style, Rgb? coverColor, bool onDarkSurface, bool overlay, bool glassOpacity = false)
     {
         if (style.ColorMode == ColorMode.Glass)
         {
             if (overlay)
-                return OnDark(new Argb(140, new Rgb(16, 16, 26)), frosted: true);
+                return OnDark(new Argb(glassOpacity ? Alpha(style.Opacity) : (byte)140, new Rgb(16, 16, 26)), frosted: true);
             return onDarkSurface
                 ? OnDark(new Argb(19, Rgb.White), frosted: false)
                 : OnLight(new Argb(13, Rgb.Black));
@@ -28,11 +30,13 @@ public readonly record struct SurfaceColors(Argb Background, Argb Text, Argb Sec
         var color = style.ColorMode == ColorMode.Cover
             ? coverColor ?? new Rgb(58, 62, 84)
             : Rgb.ParseOr(style.CustomColor, new Rgb(91, 108, 240));
-        var background = new Argb((byte)Math.Round(Math.Clamp(style.Opacity, 0, 100) * 2.55), color);
+        var background = new Argb(Alpha(style.Opacity), color);
         // Seen through, the background mixes with what is behind it: count a light veil on a light taskbar as light.
         bool light = color.IsLight || (!onDarkSurface && !overlay && style.Opacity < 45);
         return light ? OnLight(background) : OnDark(background, frosted: false);
     }
+
+    private static byte Alpha(int opacity) => (byte)Math.Round(Math.Clamp(opacity, 0, 100) * 2.55);
 
     private static SurfaceColors OnDark(Argb background, bool frosted) => new(
         background, new Argb(255, Rgb.White), new Argb(178, Rgb.White), new Argb(64, Rgb.White), new Argb(28, Rgb.White), frosted);

@@ -5,8 +5,8 @@
 <h1 align="center">NowPlaying</h1>
 
 <p align="center">
-  What's playing, right in the Windows 11 taskbar, from any app (Spotify, YouTube, Deezer…), and as an overlay for
-  OBS Studio.
+  What's playing, right in the Windows 11 taskbar, from any app (Spotify, YouTube, Deezer…): also as a floating
+  widget, in the Widgets board, and as an overlay for OBS Studio.
 </p>
 
 <p align="center">
@@ -19,7 +19,7 @@
 
 ---
 
-> **Early development.** Version 0.1 shows what plays in the taskbar and in OBS, with its customization. Liking a
+> **Early development.** Version 0.2 adds a floating widget and a widget for the Windows Widgets board. Liking a
 > track (Spotify) and the taskbars of the other screens will come next.
 
 ## Features
@@ -28,23 +28,35 @@
 
 - The **cover, title and artist** of what's playing, from any app that tells Windows what it plays: Spotify, a
   browser (YouTube, Deezer, SoundCloud…), Media Player, Apple Music…
-- **On hover**: previous, play / pause, next, and the progress bar (click to seek).
+- **On hover**: previous, play / pause, next, and the progress bar (click to seek; “LIVE” for a live stream).
 - **Mouse wheel**: the volume of the app that plays, not the volume of the whole PC.
 - A **visualizer**: the real spectrum of the sound, or a calm animation.
 - The text stays readable: its color follows what is really behind the widget (a light or dark taskbar, a colored or
   see-through one).
 - Several apps playing: the last one started is shown; **right click** to pick another one.
-- On the left, after Windows' weather, or next to the clock. Hidden over full-screen apps. Turn off Windows'
-  weather (the app opens the right settings page) and the widget takes its place.
+- On the left, after Windows' weather, or next to the clock. Hidden over full-screen apps, visible even while Start is
+  open. Turn off Windows' weather (the app opens the right settings page) and the widget takes its place.
+
+### On the desktop
+
+- A **floating widget**, anywhere on the screen: drag it, keep it above the windows or under them, lock its place.
+- **Frosted glass** (what is behind it shows blurred), transparent, the color of the cover or your own; a shadow if
+  you like.
+
+### In the Widgets board
+
+- A NowPlaying widget for the **Windows Widgets board** (Win + W): the cover on a blurred background, the controls,
+  three sizes, light or dark like the board.
 
 ### For streamers
 
 - An **overlay for OBS Studio**: a Browser Source pointing to a page of the app, transparent, updated live.
-- Two layouts: a **compact bar** (as in the taskbar) and a **card** (cover, title, artist, progress).
+- Two layouts: a **compact bar** (as in the taskbar) and a **card**, each with the time and the progress if you like.
+- Off until you turn it on (**NowPlaying → OBS overlay**).
 
 ### Your style
 
-- The widget and each overlay have **their own style**: the color of the cover, glass or your own color, width,
+- Each widget and each overlay has **its own style**: the color of the cover, glass or your own color, width,
   rounded corners, font, and the parts you want to see.
 
 ### And also
@@ -57,6 +69,7 @@
 ### Coming next
 
 - [x] Taskbar widget, OBS overlay, customization.
+- [x] Floating widget, Widgets board widget.
 - [ ] Like the track (Spotify).
 - [ ] The taskbars of the other screens.
 
@@ -68,9 +81,11 @@
 3. Accept the administrator prompt (UAC).
 
 The installer copies the app to `C:\Program Files\NowPlaying`, adds it to the Start menu, and offers to install the
-Microsoft **.NET 10 Desktop Runtime** if it is missing. At its first start the app turns on *Start with Windows*.
+Microsoft **.NET 10 Desktop Runtime** if it is missing. On Windows 11 it also adds the widget to the Widgets board
+(**+** in the board, then NowPlaying). At its first start the app turns on *Start with Windows*.
 
-In OBS: **Sources → + → Browser**, then paste the address given in **NowPlaying → OBS overlay** (for example
+In OBS: turn on the overlay in **NowPlaying → OBS overlay**, then **Sources → + → Browser**, and paste the address
+given there (for example
 `http://localhost:6740/card`) with the size shown there.
 
 To uninstall: **Settings → Apps → Installed apps → NowPlaying**.
@@ -85,6 +100,7 @@ To uninstall: **Settings → Apps → Installed apps → NowPlaying**.
 |------|---------|---------|
 | **Git** | Get the code | `winget install Git.Git` |
 | **.NET 10 SDK** | Build the app (C# / WPF) and run the tests | `winget install Microsoft.DotNet.SDK.10` |
+| **Windows SDK** | `makeappx`, to pack the package of the Widgets board | `winget install Microsoft.WindowsSDK.10.0.26100` |
 | **Inno Setup 6** | Build the installer | `winget install JRSoftware.InnoSetup` |
 
 ### Build
@@ -93,8 +109,9 @@ To uninstall: **Settings → Apps → Installed apps → NowPlaying**.
 .\scripts\build.ps1
 ```
 
-The script runs the tests, then writes `dist\app\` (the app, framework-dependent, ReadyToRun) and
-`dist\NowPlaying-Setup-<version>.exe`. Options: `-SkipTests`, `-NoInstaller`.
+The script runs the tests, then writes `dist\app\` (the app and the widget of the Widgets board, framework-dependent,
+ReadyToRun), `dist\NowPlaying.Widgets.msix` and `dist\NowPlaying-Setup-<version>.exe`. Options: `-SkipTests`,
+`-NoInstaller`.
 
 ### While developing
 
@@ -113,8 +130,10 @@ quit it from its notification icon before starting another build.
 src/
   NowPlaying.Core/   Logic without UI: which player to show, position between reports, cover color, spectrum
                      (FFT), styles of the widget and overlays, app names, GitHub releases (updates)
-  NowPlaying/        WPF app: media sessions of Windows, app volume and sound of the PC (NAudio), the widget
-                     window over the taskbar, the overlay server and pages (Overlay/), the app window, updates
+  NowPlaying/        WPF app: media sessions of Windows, app volume and sound of the PC (NAudio), the taskbar
+                     widget (in a process of its own), the floating widget, the overlay server and pages
+                     (Overlay/), the app window, updates
+  NowPlaying.Widgets/ The widget of the Windows Widgets board (started by Windows) and its package (package/)
 installer/           Inno Setup script
 scripts/             build.ps1, make-icons.ps1
 tests/               Unit tests (xUnit)
@@ -138,14 +157,15 @@ The generated files are committed: run it again only to change the design.
 
 ## Privacy policy
 
-Nothing you listen to leaves your computer. The overlay pages are served on `localhost` only: other devices on your
-network cannot reach them. For the spectrum, the sound of the PC is analyzed in memory while the bars are shown, never
+Nothing you listen to leaves your computer. The overlay pages (when turned on) and the widget of the Widgets board get
+what plays from the app on `localhost` only: other devices on your network cannot reach it. For the spectrum, the sound of the PC is analyzed in memory while the bars are shown, never
 recorded nor sent. The only network access is the **update check** on GitHub (`api.github.com`), which can be turned
 off in **General**.
 
 ## License
 
-[MIT](LICENSE.md). Uses [NAudio](https://github.com/naudio/NAudio) (MIT).
+[MIT](LICENSE.md). Uses [NAudio](https://github.com/naudio/NAudio) (MIT) and the widgets component of the
+[Windows App SDK](https://github.com/microsoft/WindowsAppSDK) (Microsoft Software License Terms, redistributable).
 
 ## Credits
 

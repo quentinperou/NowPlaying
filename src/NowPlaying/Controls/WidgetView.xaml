@@ -91,6 +91,11 @@
             </Grid>
             <TextBlock x:Name="LengthText" Grid.Column="2" FontSize="11" VerticalAlignment="Center" Margin="7,0,0,0" />
           </Grid>
+          <!-- A live stream (no length, the position goes on): no progress to show. -->
+          <StackPanel x:Name="LivePanel" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
+            <Ellipse Width="7" Height="7" Fill="#E5484D" VerticalAlignment="Center" Margin="0,0,6,0" />
+            <TextBlock x:Name="LiveText" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+          </StackPanel>
           <Grid x:Name="VolumePanel" Visibility="Collapsed">
             <Grid.ColumnDefinitions>
               <ColumnDefinition Width="Auto" />

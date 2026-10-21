@@ -17,6 +17,9 @@
 
 #define AppName "NowPlaying"
 #define AppExe "NowPlaying.exe"
+; The widget of the Windows Widgets board: its provider (started by Windows) and the package that lists it.
+#define WidgetsExe "NowPlaying.Widgets.exe"
+#define WidgetsPackage "NowPlaying.Widgets"
 
 [Setup]
 AppId={{870C6294-F4BF-485B-A89F-F67C2C88C264}
@@ -30,7 +33,8 @@ AppUpdatesURL=https://github.com/quentinperou/NowPlaying/releases
 VersionInfoVersion={#AppFileVersion}
 DefaultDirName={autopf}\NowPlaying
 DisableProgramGroupPage=yes
-; Admin rights: installs for every user of the PC, and lets the .NET runtime be installed.
+; Admin rights: installs for every user of the PC, lets the .NET runtime be installed, and registers the unsigned
+; package of the widget (Add-AppxPackage -AllowUnsigned).
 PrivilegesRequired=admin
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -61,12 +65,15 @@ english.RuntimeFailed=The automatic installation failed. The download page will 
 french.RuntimeFailed=L'installation automatique a échoué. La page de téléchargement va s'ouvrir :%nchoisissez « .NET Desktop Runtime 10 » (x64).
 english.DeleteUserData=Also delete your NowPlaying settings (the style of the widget and of the overlays)?%n%nKeep them if you are going to install NowPlaying again.
 french.DeleteUserData=Supprimer aussi vos réglages NowPlaying (le style du widget et des overlays) ?%n%nGardez-les si vous allez réinstaller NowPlaying.
+english.WidgetNotRegistered=The NowPlaying widget could not be added to the Windows Widgets board.%nThe rest of NowPlaying works as usual.
+french.WidgetNotRegistered=Le widget NowPlaying n'a pas pu être ajouté au tableau Widgets de Windows.%nLe reste de NowPlaying fonctionne normalement.
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
 Source: "..\dist\app\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\dist\NowPlaying.Widgets.msix"; DestDir: "{app}"; Flags: ignoreversion
 
 [Registry]
 ; "Start with Windows" is written by the app itself (Settings › General, on by default once installed): removed with it.
@@ -88,9 +95,6 @@ Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags
 Filename: "{app}\{#AppExe}"; Parameters: "--background"; Flags: nowait runasoriginaluser skipifnotsilent; Check: RelaunchRequested
 
 [Code]
-const
-  WM_CLOSE = $0010;
-
 { Set by the app when it installs an update (Updater.InstallerArguments). }
 function RelaunchRequested: Boolean;
 begin
@@ -124,27 +128,93 @@ begin
   end;
 end;
 
+function IsWindows11: Boolean;
+var
+  Version: TWindowsVersion;
+begin
+  GetWindowsVersionEx(Version);
+  Result := (Version.Major > 10) or ((Version.Major = 10) and (Version.Build >= 22000));
+end;
+
+function RunPowerShell(const Command: String): Boolean;
+var
+  ResultCode: Integer;
+begin
+  Result := Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
+    '-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command "' + Command + '"',
+    '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0);
+end;
+
+function SetEnvironmentVariable(Name, Value: String): BOOL;
+  external 'SetEnvironmentVariableW@kernel32.dll stdcall';
+
+{ The provider of the widget runs while a NowPlaying widget is on the board (Windows starts it): ended so that its
+  files can be replaced or removed. Windows starts it again when the board needs it. }
+procedure StopWidgetProvider;
+var
+  ResultCode: Integer;
+begin
+  Exec('taskkill.exe', '/f /im {#WidgetsExe}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+end;
+
+{ Windows 11 Widgets board: sparse package pointing at the install folder. Registered again at each install, but
+  never removed by an update: Windows would take the widget off the user's board. When the registration in place
+  does not match (another folder, another package), it is replaced. }
+procedure RegisterWidget;
+begin
+  { The paths reach PowerShell through environment variables (inherited by the child process), not inside the
+    command text: a quote in the install folder would end a quoted string and break the command. }
+  SetEnvironmentVariable('NOWPLAYING_MSIX', ExpandConstant('{app}\NowPlaying.Widgets.msix'));
+  SetEnvironmentVariable('NOWPLAYING_LOCATION', ExpandConstant('{app}'));
+  if RunPowerShell('Add-AppxPackage -Path $env:NOWPLAYING_MSIX -ExternalLocation $env:NOWPLAYING_LOCATION -AllowUnsigned') then
+    Log('Widget package registered')
+  else if RunPowerShell('Get-AppxPackage -Name ''{#WidgetsPackage}'' | Remove-AppxPackage; ' +
+    'Add-AppxPackage -Path $env:NOWPLAYING_MSIX -ExternalLocation $env:NOWPLAYING_LOCATION -AllowUnsigned') then
+    Log('Widget package registered again')
+  else
+    SuppressibleMsgBox(CustomMessage('WidgetNotRegistered'), mbInformation, MB_OK, IDOK);
+end;
+
+{ The uninstaller drops the package for every account, since an administrator who is not the user may have accepted
+  the UAC prompt of an earlier install. }
+procedure UnregisterWidget;
+begin
+  StopWidgetProvider;
+  if RunPowerShell('Get-AppxPackage -AllUsers -Name ''{#WidgetsPackage}'' | Remove-AppxPackage -AllUsers') then
+    Log('Widget package removed for all accounts')
+  else if RunPowerShell('Get-AppxPackage -Name ''{#WidgetsPackage}'' | Remove-AppxPackage') then
+    Log('Widget package removed for the current account')
+  else
+    Log('Could not remove the widget package');
+end;
+
+{ Called before Setup looks for the applications using the files it replaces (CloseApplications): with the provider
+  ended here, an update does not ask to close it. }
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  StopWidgetProvider;
+  Result := '';
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 begin
   if CurStep = ssPostInstall then
+  begin
     EnsureDesktopRuntime;
+    if IsWindows11 then
+      RegisterWidget;
+  end;
 end;
 
-{ NowPlaying runs in the notification area: close it before its files are removed. WM_CLOSE on its hidden window
-  (titled "NowPlaying") quits the app; on its main window (same title), it only closes that window. }
+{ NowPlaying runs in the notification area: close it before its files are removed. taskkill without /f sends
+  WM_CLOSE to the windows of NowPlaying.exe only (its hidden window quits the app, and the widget process ends with
+  it); a window title would also match a File Explorer window open on a folder named NowPlaying. /f for what is left. }
 procedure CloseRunningApp;
 var
-  Wnd: HWND;
-  Tries, ResultCode: Integer;
+  ResultCode: Integer;
 begin
-  for Tries := 1 to 10 do
-  begin
-    Wnd := FindWindowByWindowName('{#AppName}');
-    if Wnd = 0 then
-      Exit;
-    SendMessage(Wnd, WM_CLOSE, 0, 0);
-    Sleep(200);
-  end;
+  if Exec('taskkill.exe', '/im {#AppExe}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode) and (ResultCode = 0) then
+    Sleep(1500);
   Exec('taskkill.exe', '/f /im {#AppExe}', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 end;
 
@@ -158,6 +228,9 @@ end;
   being the default, so that a reinstall finds them. A silent uninstall keeps them. }
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
+  { Before the files go: the package points at them. }
+  if CurUninstallStep = usUninstall then
+    UnregisterWidget;
   if (CurUninstallStep = usPostUninstall) and not UninstallSilent and
      (MsgBox(CustomMessage('DeleteUserData'), mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES) then
     DelTree(ExpandConstant('{localappdata}\NowPlaying'), True, True, True);

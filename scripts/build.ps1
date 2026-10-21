@@ -4,8 +4,10 @@
 
 .DESCRIPTION
     Output in the dist\ folder:
-      app\                             the app (NowPlaying.exe...), framework-dependent (.NET 10 Desktop Runtime),
+      app\                             the app (NowPlaying.exe...) and the widget of the Windows Widgets board
+                                       (NowPlaying.Widgets.exe), framework-dependent (.NET 10 Desktop Runtime),
                                        compiled ahead of time (ReadyToRun: lighter and quicker to start)
+      NowPlaying.Widgets.msix          the "sparse" package that lists the widget in the Widgets board
       NowPlaying-Setup-<version>.exe   the installer (needs Inno Setup 6)
 
     Prerequisites: see "Development" in the README.
@@ -41,6 +43,13 @@ $version = ([xml](Get-Content (Join-Path $root 'Directory.Build.props'))).Projec
 Write-Host "NowPlaying $version" -ForegroundColor Green
 
 if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) { throw 'Tool not found: dotnet. See the prerequisites in the README.' }
+# makeappx (Windows SDK): on the PATH in a Developer prompt, else the latest SDK installed.
+$makeappx = @(
+    (Get-Command makeappx -ErrorAction SilentlyContinue).Source
+    Get-ChildItem (Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\bin\*\x64\makeappx.exe') -ErrorAction SilentlyContinue |
+        Sort-Object { [version]$_.Directory.Parent.Name } -Descending | Select-Object -ExpandProperty FullName
+) | Where-Object { $_ } | Select-Object -First 1
+if (-not $makeappx) { throw 'Tool not found: makeappx (Windows SDK). See the prerequisites in the README.' }
 
 # Start from an empty dist folder (build output only).
 if ([IO.Directory]::Exists($dist)) { [IO.Directory]::Delete($dist, $true) }
@@ -56,6 +65,18 @@ Invoke-Native {
     dotnet publish (Join-Path $root 'src\NowPlaying') -c Release -r win-x64 --self-contained false `
         -p:DebugType=none -o $appDir --nologo
 } 'Building the application'
+
+Write-Step 'Widget of the Widgets board (.NET)'
+# Same folder as the app: the two share their Windows files (WinRT.Runtime, Microsoft.Windows.SDK.NET).
+Invoke-Native {
+    dotnet publish (Join-Path $root 'src\NowPlaying.Widgets') -c Release -r win-x64 --self-contained false `
+        -p:DebugType=none -o $appDir --nologo
+} 'Building the widget'
+
+Write-Step 'Sparse package (Widgets board)'
+Invoke-Native {
+    & $makeappx pack /o /nv /d (Join-Path $root 'src\NowPlaying.Widgets\package') /p (Join-Path $dist 'NowPlaying.Widgets.msix')
+} 'makeappx'
 
 if (-not $NoInstaller) {
     Write-Step 'Installer (Inno Setup)'

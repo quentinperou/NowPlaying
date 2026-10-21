@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  "Sparse" package (package with external location): it contains only this manifest and the logos.
+  It gives NowPlaying a package identity so that its widget shows in the Windows Widgets board (Win+W, "+").
+  The board starts NowPlaying.Widgets.exe (a COM server, src/NowPlaying.Widgets) from the install folder, passed at
+  registration:
+    Add-AppxPackage -Path NowPlaying.Widgets.msix -ExternalLocation <install folder> -AllowUnsigned
+
+  The package is not signed: the OID in Publisher marks it as an unsigned package, which Windows 11 installs with
+  -AllowUnsigned from an elevated prompt (the installer does it).
+
+  Only bump Version when this file changes: the installer re-registers the package on every install.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+  xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"
+  xmlns:desktop6="http://schemas.microsoft.com/appx/manifest/desktop/windows10/6"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap uap3 uap10 desktop6 com rescap">
+
+  <Identity
+    Name="NowPlaying.Widgets"
+    Publisher="CN=NowPlaying, OID.2.25.311729368913984317654407730594956997722=1"
+    Version="1.0.0.0"
+    ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>NowPlaying</DisplayName>
+    <PublisherDisplayName>QuentinPerou</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <uap10:AllowExternalContent>true</uap10:AllowExternalContent>
+    <!-- The provider reads %LOCALAPPDATA%\NowPlaying\settings.json (written by the app, which has no package
+         identity): with file system virtualization on, a packaged process could be shown a copy of its own. -->
+    <desktop6:RegistryWriteVirtualization>disabled</desktop6:RegistryWriteVirtualization>
+    <desktop6:FileSystemWriteVirtualization>disabled</desktop6:FileSystemWriteVirtualization>
+  </Properties>
+
+  <Resources>
+    <Resource Language="en-us" />
+    <Resource Language="fr-fr" />
+  </Resources>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.22000.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+    <rescap:Capability Name="unvirtualizedResources" />
+  </Capabilities>
+
+  <Applications>
+    <Application Id="NowPlayingWidgets" Executable="NowPlaying.Widgets.exe" uap10:TrustLevel="mediumIL" uap10:RuntimeBehavior="win32App">
+      <uap:VisualElements
+        AppListEntry="none"
+        DisplayName="NowPlaying"
+        Description="What's playing, in the Windows Widgets board"
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png" />
+
+      <Extensions>
+        <!-- The provider: NowPlaying.Widgets.exe, started by Windows when a NowPlaying widget is on the board. -->
+        <com:Extension Category="windows.comServer">
+          <com:ComServer>
+            <com:ExeServer Executable="NowPlaying.Widgets.exe" Arguments="-RegisterProcessAsComServer" DisplayName="NowPlaying widget">
+              <com:Class Id="6E5961A8-95F5-4413-ADCB-B9BD8D1B3EDA" DisplayName="NowPlaying widget" />
+            </com:ExeServer>
+          </com:ComServer>
+        </com:Extension>
+
+        <!-- The widget, as the board lists it ("+" > NowPlaying). -->
+        <uap3:Extension Category="windows.appExtension">
+          <uap3:AppExtension Name="com.microsoft.windows.widgets" DisplayName="NowPlaying" Id="NowPlaying">
+            <uap3:Properties>
+              <WidgetProvider>
+                <ProviderIcons>
+                  <Icon Path="Assets\Widget.png" />
+                </ProviderIcons>
+                <Activation>
+                  <CreateInstance ClassId="6E5961A8-95F5-4413-ADCB-B9BD8D1B3EDA" />
+                </Activation>
+                <Definitions>
+                  <Definition Id="NowPlaying" DisplayName="NowPlaying" Description="What's playing, from any app" IsCustomizable="false">
+                    <Capabilities>
+                      <Capability>
+                        <Size Name="small" />
+                      </Capability>
+                      <Capability>
+                        <Size Name="medium" />
+                      </Capability>
+                      <Capability>
+                        <Size Name="large" />
+                      </Capability>
+                    </Capabilities>
+                    <!-- The previews: the widget in its dark and light looks (.local/maquettes/widget-preview.ps1). -->
+                    <ThemeResources>
+                      <Icons>
+                        <Icon Path="Assets\Widget.png" />
+                      </Icons>
+                      <Screenshots>
+                        <Screenshot Path="Assets\Screenshot-dark.png" DisplayAltText="NowPlaying" />
+                      </Screenshots>
+                      <DarkMode>
+                        <Screenshots>
+                          <Screenshot Path="Assets\Screenshot-dark.png" DisplayAltText="NowPlaying" />
+                        </Screenshots>
+                      </DarkMode>
+                      <LightMode>
+                        <Screenshots>
+                          <Screenshot Path="Assets\Screenshot-light.png" DisplayAltText="NowPlaying" />
+                        </Screenshots>
+                      </LightMode>
+                    </ThemeResources>
+                  </Definition>
+                </Definitions>
+              </WidgetProvider>
+            </uap3:Properties>
+          </uap3:AppExtension>
+        </uap3:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+</Package>

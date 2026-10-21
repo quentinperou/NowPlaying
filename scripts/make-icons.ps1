@@ -181,3 +181,10 @@ Save-Png 256 (Join-Path $root 'docs\icon-256.png')
 # Large image shown inside the app (About card, Settings title): an .ico would display its first, 16 px, frame.
 Save-Png 256 (Join-Path $root 'src\NowPlaying\Assets\NowPlaying.png')
 Save-Svg (Join-Path $root 'docs\icons\NowPlaying.svg') (Get-AppSvg)
+# Logos of the package that brings the widget to the Windows Widgets board (src\NowPlaying.Widgets\package).
+$package = Join-Path $root 'src\NowPlaying.Widgets\package\Assets'
+New-Item -ItemType Directory -Force $package | Out-Null
+Save-Png 50 (Join-Path $package 'StoreLogo.png')
+Save-Png 44 (Join-Path $package 'Square44x44Logo.png')
+Save-Png 150 (Join-Path $package 'Square150x150Logo.png')
+Save-Png 256 (Join-Path $package 'Widget.png')

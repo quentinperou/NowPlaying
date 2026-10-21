@@ -10,9 +10,11 @@ namespace NowPlaying;
 
 /// <summary>
 /// The widget in the taskbar. Windows 11 lets no app add anything to its taskbar: this is a window of its own, laid
-/// over the taskbar of the main screen (left, or near the clock), kept above it when the taskbar comes to the front,
-/// hidden over full-screen apps and while an auto-hidden taskbar is away. It is never made a child of the taskbar:
-/// a problem in NowPlaying can never freeze Explorer.
+/// over the taskbar of the main screen (left, or near the clock), hidden over full-screen apps and while an
+/// auto-hidden taskbar is away. Its owner is the taskbar: an owned window always stays above its owner, even when
+/// Windows lifts the taskbar over every window while Start or search is open (a topmost window then went under it).
+/// That tie lets the two threads share their input: the window runs in the widget process only (see
+/// <see cref="Services.TaskbarHost"/>), which the app ends if it ever stops answering.
 /// </summary>
 public partial class TaskbarWidget : Window
 {
@@ -41,6 +43,7 @@ public partial class TaskbarWidget : Window
         SetWindowLongPtr(_hwnd, GWL_EXSTYLE, new IntPtr(style | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE));
         HwndSource.FromHwnd(_hwnd)?.AddHook(WndProc);
         KeepTransparent();
+        SetWindowLongPtr(_hwnd, GWLP_HWNDPARENT, FindWindow("Shell_TrayWnd", null));
 
         // An app bar that takes no room: Windows tells it when an app goes full screen on its screen.
         var data = new APPBARDATA { cbSize = Marshal.SizeOf<APPBARDATA>(), hWnd = _hwnd, uCallbackMessage = AppBarMessage };
@@ -74,31 +77,20 @@ public partial class TaskbarWidget : Window
     private readonly DispatcherTimer _relookTimer = new() { Interval = TimeSpan.FromMilliseconds(700) };
     private int _relooks;
 
-    /// <summary>
-    /// See-through where nothing is drawn, composed by DWM (a layered window, AllowsTransparency, would be drawn by the
-    /// processor at each frame of the bars): no backdrop, no rounded corners nor border from Windows 11, the widget
-    /// draws its own. Applied again when the theme of the app changes, which may touch every window.
-    /// </summary>
-    public void KeepTransparent()
-    {
-        if (_hwnd == IntPtr.Zero)
-            return;
-        Background = System.Windows.Media.Brushes.Transparent;
-        if (HwndSource.FromHwnd(_hwnd)?.CompositionTarget is { } target)
-            target.BackgroundColor = System.Windows.Media.Colors.Transparent;
-        var margins = new MARGINS { Left = -1, Right = -1, Top = -1, Bottom = -1 };
-        DwmExtendFrameIntoClientArea(_hwnd, ref margins);
-        int backdrop = DWMSBT_NONE, corners = DWMWCP_DONOTROUND, border = DWMWA_COLOR_NONE;
-        DwmSetWindowAttribute(_hwnd, DWMWA_SYSTEMBACKDROP_TYPE, ref backdrop, sizeof(int));
-        DwmSetWindowAttribute(_hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref corners, sizeof(int));
-        DwmSetWindowAttribute(_hwnd, DWMWA_BORDER_COLOR, ref border, sizeof(int));
-    }
+    /// <summary>See-through where nothing is drawn (see <see cref="SeeThrough"/>).</summary>
+    public void KeepTransparent() => SeeThrough.Apply(this, _hwnd);
 
     /// <summary>
     /// Whether what is behind the widget is dark, read on the screen (the line of taskbar just above it): a dark or
     /// light taskbar, one in the accent color, or one made see-through by another app over a wallpaper. Null until read.
     /// </summary>
     public bool? BackdropIsDark { get; private set; }
+
+    /// <summary>Its place and width.</summary>
+    public WidgetStyle WidgetStyle { get; set; } = new();
+
+    /// <summary>Resolution, scale, light / dark or taskbar settings changed: the colors may have to follow.</summary>
+    public event EventHandler? DisplayChanged;
 
     /// <summary>Whether the widget should be on screen (a track to show, the widget on): it still hides over full screen.</summary>
     public void SetWanted(bool wanted)
@@ -175,8 +167,8 @@ public partial class TaskbarWidget : Window
             return false;
 
         double scale = GetDpiForWindow(tray) / 96.0;
-        var style = App.Settings.Widget;
-        int width = (int)Math.Round(style.Width * scale), height = (int)Math.Round(WidgetStyle.Height * scale);
+        var style = WidgetStyle;
+        int width =(int)Math.Round(style.Width * scale), height = (int)Math.Round(WidgetStyle.Height * scale);
         int margin = (int)Math.Round((8 + style.Offset) * scale);
         y = bar.Top + (bar.Height - height) / 2;
         _barTop = bar.Top;
@@ -307,7 +299,8 @@ public partial class TaskbarWidget : Window
                 Dispatcher.BeginInvoke(() =>
                 {
                     _resample = true;
-                    App.RefreshWidget();
+                    DisplayChanged?.Invoke(this, EventArgs.Empty);
+                    Place();
                     FindTaskbarButtons();
                 }, DispatcherPriority.Background);
                 break;

@@ -12,6 +12,7 @@ namespace NowPlaying;
 public enum MainPage
 {
     Widget,
+    Floating,
     Overlay,
     General,
     Updates,
@@ -27,6 +28,8 @@ public partial class MainWindow : Window
     private readonly Dictionary<MainPage, FrameworkElement> _pages = [];
     private WidgetView? _widgetPreview;
     private Border? _widgetStrip;
+    private WidgetView? _floatingPreview;
+    private Border? _floatingStage;
     private OverlayPreview? _overlayPreview;
     private Border? _overlayStage;
     private bool _sceneBackground;
@@ -67,6 +70,7 @@ public partial class MainWindow : Window
             content = page switch
             {
                 MainPage.Widget => BuildWidgetPage(),
+                MainPage.Floating => BuildFloatingPage(),
                 MainPage.Overlay => BuildOverlayPage(),
                 MainPage.Updates => BuildUpdatesPage(),
                 MainPage.About => BuildAboutPage(),
@@ -84,6 +88,7 @@ public partial class MainWindow : Window
         var (glyph, key) = page switch
         {
             MainPage.Widget => ("", "PageWidget"),
+            MainPage.Floating => ("", "PageFloating"),
             MainPage.Overlay => ("", "PageOverlay"),
             MainPage.Updates => ("", "PageUpdates"),
             MainPage.About => ("", "PageAbout"),
@@ -163,6 +168,71 @@ public partial class MainWindow : Window
         return page;
     }
 
+    // ---------------------------------------------------------------- Floating widget page
+
+    private FrameworkElement BuildFloatingPage()
+    {
+        var style = App.Settings.Floating;
+        var page = new StackPanel();
+        page.Children.Add(Ui.PageTitle(Strings.Get("PageFloating")));
+
+        page.Children.Add(Ui.Card("", Strings.Get("FloatingShow"), Strings.Get("FloatingShowHint"),
+            Ui.Toggle(App.Settings.FloatingEnabled, App.SetFloatingEnabled, Strings.Get("FloatingShow"))));
+
+        // Live preview over a picture: the widget floats over any window.
+        _floatingPreview = new WidgetView { Spectrum = App.Spectrum, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        App.Wire(_floatingPreview);
+        _floatingStage = new Border { Height = 96, CornerRadius = new CornerRadius(6), Child = _floatingPreview, ClipToBounds = true };
+        var preview = new StackPanel();
+        preview.Children.Add(new TextBlock { Text = Strings.Get("FloatingPreviewHint"), Style = (Style)Application.Current.FindResource("CardDescription"), Margin = new Thickness(0, 0, 0, 10) });
+        preview.Children.Add(_floatingStage);
+        page.Children.Add(new Border { Style = (Style)Application.Current.FindResource("Card"), Child = preview, Padding = new Thickness(16, 12, 16, 16) });
+
+        page.Children.Add(Ui.Section(Strings.Get("SectionPlace")));
+        page.Children.Add(Ui.Card("", Strings.Get("FloatingPosition"), Strings.Get("FloatingPositionHint"),
+            Ui.Button(Strings.Get("FloatingReset"), App.ResetFloatingPosition, glyph: "")));
+        page.Children.Add(Ui.Card("", Strings.Get("FloatingTopmost"), Strings.Get("FloatingTopmostHint"),
+            Ui.Toggle(App.Settings.FloatingTopmost, App.SetFloatingTopmost, Strings.Get("FloatingTopmost"))));
+        page.Children.Add(Ui.Card("", Strings.Get("FloatingLocked"), Strings.Get("FloatingLockedHint"),
+            Ui.Toggle(App.Settings.FloatingLocked, App.SetFloatingLocked, Strings.Get("FloatingLocked"))));
+
+        page.Children.Add(Ui.Section(Strings.Get("SectionStyle")));
+        // The shadow: on or off, and how dark (the slider is greyed while it is off).
+        var density = Ui.Slider(10, 100, style.ShadowOpacity, WidgetStyle.DefaultFloating().ShadowOpacity, "%",
+            v => { style.ShadowOpacity = v; App.ApplyStyles(); }, Strings.Get("FloatingShadow"), 160);
+        density.IsEnabled = style.Shadow;
+        var shadow = new StackPanel { Orientation = Orientation.Horizontal };
+        shadow.Children.Add(density);
+        shadow.Children.Add(Spaced(Ui.Toggle(style.Shadow, on =>
+        {
+            style.Shadow = on;
+            density.IsEnabled = on;
+            App.ApplyStyles();
+        }, Strings.Get("FloatingShadow"))));
+        var editor = new StyleEditor(style, WidgetStyle.DefaultFloating(), overlay: true,
+            [
+                (Strings.Get("ElementCover"), () => style.ShowCover, v => style.ShowCover = v),
+                (Strings.Get("ElementArtist"), () => style.ShowArtist, v => style.ShowArtist = v),
+                (Strings.Get("ElementVisualizer"), () => style.ShowVisualizer, v => style.ShowVisualizer = v),
+                (Strings.Get("ElementTimes"), () => style.ShowTimes, v => style.ShowTimes = v),
+                (Strings.Get("ElementControls"), () => style.ShowControls, v => style.ShowControls = v),
+            ], withVisualizer: false, glassOpacity: true,
+            blur: (() => style.Blur, on => style.Blur = on),
+            afterColor: Ui.Card("", Strings.Get("FloatingShadow"), Strings.Get("FloatingShadowHint"), shadow));
+        editor.Changed += (_, _) => App.ApplyStyles();
+        page.Children.Add(editor);
+
+        page.Children.Add(Ui.Section(Strings.Get("SectionBehavior")));
+        page.Children.Add(Ui.Card("", Strings.Get("StyleVisualizer"), Strings.Get("StyleVisualizerHint"),
+            Segmented.Of(
+                [(VisualizerMode.Spectrum, Strings.Get("VisualizerSpectrum")), (VisualizerMode.Animation, Strings.Get("VisualizerAnimation"))],
+                style.Visualizer, v => { style.Visualizer = v; App.ApplyStyles(); })));
+        page.Children.Add(Ui.Card("", Strings.Get("WidgetIdle"), Strings.Get("WidgetIdleHint"),
+            Ui.Choice([(IdleMode.Hide, Strings.Get("IdleHide")), (IdleMode.KeepLast, Strings.Get("IdleKeepLast"))],
+                style.Idle, v => { style.Idle = v; App.ApplyStyles(); })));
+        return page;
+    }
+
     // ---------------------------------------------------------------- Overlay page
 
     private FrameworkElement BuildOverlayPage()
@@ -178,8 +248,14 @@ public partial class MainWindow : Window
                 Child = new TextBlock { Text = Strings.Format("OverlayServerError", App.Settings.OverlayPort, error), TextWrapping = TextWrapping.Wrap },
             });
 
+        // Off (the default), OBS gets nothing; its settings stay shown, as on the other pages.
+        var content = new StackPanel();
+        page.Children.Add(Ui.Card("", Strings.Get("OverlayEnabled"), Strings.Get("OverlayEnabledHint"),
+            Ui.Toggle(App.Settings.OverlayEnabled, App.SetOverlayEnabled, Strings.Get("OverlayEnabled"))));
+        page.Children.Add(content);
+
         var layoutHost = new ContentControl();
-        page.Children.Add(Ui.Card("", Strings.Get("OverlayLayout"), Strings.Get("OverlayLayoutHint"),
+        content.Children.Add(Ui.Card("", Strings.Get("OverlayLayout"), Strings.Get("OverlayLayoutHint"),
             Segmented.Of(
                 [(OverlayLayout.Bar, Strings.Get("LayoutBar")), (OverlayLayout.Card, Strings.Get("LayoutCard"))],
                 _overlayLayout, layout =>
@@ -189,7 +265,29 @@ public partial class MainWindow : Window
                     RefreshPreviews();
                 })));
         layoutHost.Content = BuildOverlayLayout(_overlayLayout);
-        page.Children.Add(layoutHost);
+        content.Children.Add(layoutHost);
+
+        // The port of the pages (http://localhost:port/...), for when another program already uses it.
+        var settings = App.Settings;
+        content.Children.Add(Ui.Section(Strings.Get("SectionAdvanced")));
+        var port = new TextBox { Width = 90, Text = settings.OverlayPort.ToString(), VerticalAlignment = VerticalAlignment.Center };
+        System.Windows.Automation.AutomationProperties.SetName(port, Strings.Get("OverlayPort"));
+        var portRow = new StackPanel { Orientation = Orientation.Horizontal };
+        portRow.Children.Add(port);
+        portRow.Children.Add(Spaced(Ui.Button(Strings.Get("Apply"), () =>
+        {
+            if (int.TryParse(port.Text, out int value) && value is >= 1024 and <= 65535 && value != settings.OverlayPort)
+            {
+                settings.OverlayPort = value;
+                settings.Save();
+                App.RestartOverlayServer();
+                // Built again, with the new addresses.
+                _pages.Remove(MainPage.Overlay);
+                Dispatcher.BeginInvoke(() => Nav_SelectionChanged(Nav, null!));
+            }
+            port.Text = settings.OverlayPort.ToString();
+        })));
+        content.Children.Add(Ui.Card("", Strings.Get("OverlayPort"), Strings.Get("OverlayPortHint"), portRow));
         return page;
     }
 
@@ -227,6 +325,8 @@ public partial class MainWindow : Window
             {
                 (Strings.Get("ElementCover"), () => style.ShowCover, v => style.ShowCover = v),
                 (Strings.Get("ElementArtist"), () => style.ShowArtist, v => style.ShowArtist = v),
+                (Strings.Get("ElementProgress"), () => style.ShowProgress, v => style.ShowProgress = v),
+                (Strings.Get("ElementTimes"), () => style.ShowTimes, v => style.ShowTimes = v),
                 (Strings.Get("ElementVisualizer"), () => style.ShowVisualizer, v => style.ShowVisualizer = v),
             }
             : [
@@ -235,7 +335,9 @@ public partial class MainWindow : Window
                 (Strings.Get("ElementProgress"), () => style.ShowProgress, v => style.ShowProgress = v),
                 (Strings.Get("ElementTimes"), () => style.ShowTimes, v => style.ShowTimes = v),
             ];
-        var editor = new StyleEditor(style, OverlayStyle.Default(layout), overlay: true, elements, withVisualizer: layout == OverlayLayout.Bar);
+        // In OBS, "Glass" is a veil: a Browser Source is drawn alone, it cannot blur the scene behind it.
+        var editor = new StyleEditor(style, OverlayStyle.Default(layout), overlay: true, elements, withVisualizer: layout == OverlayLayout.Bar,
+            colorHint: "OverlayColorHint");
         editor.Changed += (_, _) => App.ApplyStyles();
         panel.Children.Add(editor);
         return panel;
@@ -279,24 +381,8 @@ public partial class MainWindow : Window
                     settings.Theme = theme;
                     settings.Save();
                     App.ApplyTheme(theme);
+                    App.RefreshWidget(); // the menu of the taskbar widget follows
                 })));
-
-        var port = new TextBox { Width = 90, Text = settings.OverlayPort.ToString(), VerticalAlignment = VerticalAlignment.Center };
-        System.Windows.Automation.AutomationProperties.SetName(port, Strings.Get("OverlayPort"));
-        var portRow = new StackPanel { Orientation = Orientation.Horizontal };
-        portRow.Children.Add(port);
-        portRow.Children.Add(Spaced(Ui.Button(Strings.Get("Apply"), () =>
-        {
-            if (int.TryParse(port.Text, out int value) && value is >= 1024 and <= 65535 && value != settings.OverlayPort)
-            {
-                settings.OverlayPort = value;
-                settings.Save();
-                App.RestartOverlayServer();
-                _pages.Remove(MainPage.Overlay);
-            }
-            port.Text = settings.OverlayPort.ToString();
-        })));
-        page.Children.Add(Ui.Card("", Strings.Get("OverlayPort"), Strings.Get("OverlayPortHint"), portRow));
 
         return page;
     }
@@ -508,7 +594,7 @@ public partial class MainWindow : Window
     private void ShowWeatherState()
     {
         if (_weatherText is not null)
-            _weatherText.Text = Strings.Get(App.Widget.WindowsWeatherShown == false ? "WindowsWeatherHidden" : "WindowsWeatherShown");
+            _weatherText.Text = Strings.Get(App.Taskbar.WindowsWeatherShown == false ? "WindowsWeatherHidden" : "WindowsWeatherShown");
     }
 
     private void RefreshPreviews()
@@ -523,6 +609,14 @@ public partial class MainWindow : Window
             var style = App.Settings.Widget;
             _widgetPreview.ApplyStyle(style, SurfaceColors.Resolve(style, media?.CoverColor, dark, overlay: false));
             _widgetPreview.ShowMedia(media, idle: false);
+        }
+        if (_floatingPreview is not null && _floatingStage is not null)
+        {
+            _floatingStage.Background = Checkerboard.Scene();
+            var style = App.Settings.Floating;
+            _floatingPreview.ApplyStyle(style, App.FloatingColors(style, media?.CoverColor),
+                style.Blur && style.ColorMode == ColorMode.Glass ? style.CornerRadius : null);
+            _floatingPreview.ShowMedia(media, idle: false);
         }
         if (_overlayPreview is not null && _overlayStage is not null)
         {

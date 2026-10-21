@@ -39,4 +39,19 @@ public static class Timeline
     /// <summary>Share of the track played, 0 to 1 (0 when the length is unknown).</summary>
     public static double Fraction(TimeSpan position, TimeSpan duration) =>
         duration > TimeSpan.Zero ? Math.Clamp(position.TotalMilliseconds / duration.TotalMilliseconds, 0, 1) : 0;
+
+    /// <summary>
+    /// What the progress shows: the times and the bar of a track (its length is known), "live" (no length, but the
+    /// position goes on: a live stream), or nothing (a player that tells neither: "live" would be wrong for a song).
+    /// </summary>
+    public static ProgressKind Kind(TimeSpan positionNow, TimeSpan duration) =>
+        duration > TimeSpan.Zero ? ProgressKind.Track : positionNow > TimeSpan.Zero ? ProgressKind.Live : ProgressKind.None;
+}
+
+/// <summary>See <see cref="Timeline.Kind"/>.</summary>
+public enum ProgressKind
+{
+    None,
+    Track,
+    Live,
 }

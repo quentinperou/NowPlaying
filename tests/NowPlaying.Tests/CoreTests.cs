@@ -123,6 +123,29 @@ public class TimelineTests
     [InlineData(-3, "0:00")]
     public void Format_ReadsLikeAPlayer(int seconds, string expected) =>
         Assert.Equal(expected, Timeline.Format(TimeSpan.FromSeconds(seconds)));
+
+    // A live stream (YouTube, Twitch): no length, or a negative one from a player whose end is before its start.
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-30)]
+    public void ALiveStream_GoesOnWithoutLimitNorProgress(int lengthSeconds)
+    {
+        var length = TimeSpan.FromSeconds(lengthSeconds);
+        var at = Timeline.Extrapolate(TimeSpan.FromHours(5), Now.AddSeconds(-4), Now, true, 1, length);
+        Assert.Equal(TimeSpan.FromHours(5) + TimeSpan.FromSeconds(4), at);
+        Assert.Equal(0, Timeline.Fraction(at, length));
+        Assert.Equal("0:00", Timeline.Format(length));
+        Assert.Equal(ProgressKind.Live, Timeline.Kind(at, length));
+    }
+
+    [Fact]
+    public void Kind_ShowsLiveOnlyWhenThePositionGoesOn()
+    {
+        Assert.Equal(ProgressKind.Track, Timeline.Kind(TimeSpan.FromSeconds(44), TimeSpan.FromMinutes(3)));
+        Assert.Equal(ProgressKind.Track, Timeline.Kind(TimeSpan.Zero, TimeSpan.FromMinutes(3)));
+        // A player that tells neither its length nor its position: nothing, not "live".
+        Assert.Equal(ProgressKind.None, Timeline.Kind(TimeSpan.Zero, TimeSpan.Zero));
+    }
 }
 
 public class SourcePickerTests

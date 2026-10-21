@@ -26,6 +26,9 @@ internal sealed class OverlayPreview : Border
     private readonly TextBlock _length = new() { FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(10, 0, 0, 0) };
     private readonly Border _track = new() { Height = 4, CornerRadius = new CornerRadius(2), VerticalAlignment = VerticalAlignment.Center };
     private readonly Border _fill = new() { Height = 4, CornerRadius = new CornerRadius(2), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center };
+    // A live stream: "live" instead of the times and the bar.
+    private readonly StackPanel _live = new() { Orientation = Orientation.Horizontal };
+    private readonly TextBlock _liveText = new() { FontSize = 12, FontWeight = FontWeights.Bold, VerticalAlignment = VerticalAlignment.Center };
     private readonly float[] _levels = new float[BarCount];
     private readonly DispatcherTimer _timer = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(33) };
 
@@ -48,6 +51,12 @@ internal sealed class OverlayPreview : Border
         _progress.Children.Add(_elapsed);
         _progress.Children.Add(trackGrid);
         _progress.Children.Add(_length);
+        _live.Children.Add(new Ellipse
+        {
+            Width = 7, Height = 7, Fill = new SolidColorBrush(Color.FromRgb(0xE5, 0x48, 0x4D)), Margin = new Thickness(0, 0, 6, 0),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        _live.Children.Add(_liveText);
 
         _timer.Tick += (_, _) => Tick();
         IsVisibleChanged += (_, _) => UpdateTimer();
@@ -102,18 +111,24 @@ internal sealed class OverlayPreview : Border
         _artist.Foreground = secondary;
         _artist.Visibility = _style.ShowArtist ? Visibility.Visible : Visibility.Collapsed;
         _elapsed.Foreground = _length.Foreground = secondary;
+        _elapsed.FontSize = _length.FontSize = bar ? 11 : 12;
         _track.Background = WidgetView.Brush(colors.Track);
         _fill.Background = text;
-        _progress.Visibility = !bar && _style.ShowProgress ? Visibility.Visible : Visibility.Collapsed;
+        // Under the artist, closer in the bar (less room).
+        _progress.Margin = _live.Margin = new Thickness(0, bar ? 5 : 16, 0, 0);
+        _liveText.Text = Strings.Get("Live");
+        _liveText.Foreground = text;
+        ShowProgressKind();
         _elapsed.Visibility = _length.Visibility = _style.ShowTimes ? Visibility.Visible : Visibility.Collapsed;
         _bars.Visibility = bar && _style.ShowVisualizer ? Visibility.Visible : Visibility.Collapsed;
         _bars.Fill = secondary;
 
         var info = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        Detach(_title, _artist, _progress, _cover, _bars);
+        Detach(_title, _artist, _progress, _live, _cover, _bars);
         info.Children.Add(_title);
         info.Children.Add(_artist);
         info.Children.Add(_progress);
+        info.Children.Add(_live);
         var dock = new DockPanel();
         DockPanel.SetDock(_cover, Dock.Left);
         dock.Children.Add(_cover);
@@ -125,6 +140,14 @@ internal sealed class OverlayPreview : Border
         Tick();
     }
 
+    // The times and the bar, "live" (no length, the position goes on), or nothing (the player tells neither).
+    private void ShowProgressKind()
+    {
+        var kind = WidgetView.Progress(_media);
+        _progress.Visibility = _style.ShowProgress && kind == ProgressKind.Track ? Visibility.Visible : Visibility.Collapsed;
+        _live.Visibility = _style.ShowProgress && kind == ProgressKind.Live ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     private static void Detach(params FrameworkElement[] elements)
     {
         foreach (var element in elements)
@@ -133,13 +156,13 @@ internal sealed class OverlayPreview : Border
     }
 
     private bool Animated => IsVisible && _media is { IsPlaying: true }
-        && (_layout == OverlayLayout.Bar ? _style.ShowVisualizer : _style.ShowProgress);
+        && (_style.ShowProgress || (_layout == OverlayLayout.Bar && _style.ShowVisualizer));
 
     private void UpdateTimer()
     {
         if (Animated && !_timer.IsEnabled)
         {
-            if (_layout == OverlayLayout.Bar && _style.Visualizer == VisualizerMode.Spectrum && Spectrum is not null)
+            if (_layout == OverlayLayout.Bar && _style.ShowVisualizer && _style.Visualizer == VisualizerMode.Spectrum && Spectrum is not null)
             {
                 Spectrum.Acquire();
                 _spectrumHeld = true;
@@ -167,14 +190,16 @@ internal sealed class OverlayPreview : Border
             _bars.Flatten();
             return;
         }
-        if (_layout == OverlayLayout.Card)
+        if (_style.ShowProgress)
         {
+            ShowProgressKind();
             var position = _media.PositionNow;
             _elapsed.Text = Timeline.Format(position);
             _length.Text = Timeline.Format(_media.Duration);
             _fill.Width = Math.Max(0, (_track.ActualWidth > 0 ? _track.ActualWidth : 200) * Timeline.Fraction(position, _media.Duration));
-            return;
         }
+        if (_layout == OverlayLayout.Card)
+            return;
         if (!_media.IsPlaying)
             _bars.Flatten();
         else if (_spectrumHeld && Spectrum is not null)

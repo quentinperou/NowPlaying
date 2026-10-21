@@ -31,6 +31,7 @@
     el.classList.toggle('no-viz', !style.showVisualizer);
     el.classList.toggle('no-progress', !style.showProgress);
     el.classList.toggle('no-times', !style.showTimes);
+    $('.live b').textContent = style.liveText || 'LIVE';
   }
 
   function applyState() {
@@ -43,10 +44,15 @@
 
   function frame(now) {
     if (state.hasTrack && style) {
-      if (layout === 'card' && style.showProgress) {
-        const ms = Math.min(state.durationMs || 0, (state.positionMs || 0) + (state.playing ? now - receivedAt : 0));
+      if (style.showProgress) {
+        // No length: a live stream if the position goes on ("live" instead of the times and the bar), else nothing.
+        const at = (state.positionMs || 0) + (state.playing ? now - receivedAt : 0);
+        const length = state.durationMs || 0;
+        el.classList.toggle('is-live', length <= 0 && at > 0);
+        el.classList.toggle('no-length', length <= 0 && at <= 0);
+        const ms = length > 0 ? Math.min(length, at) : at;
         $('.t0').textContent = fmt(ms);
-        $('.fill').style.width = (state.durationMs ? ms / state.durationMs * 100 : 0) + '%';
+        $('.fill').style.width = (length > 0 ? ms / length * 100 : 0) + '%';
       }
       if (layout === 'bar' && style.showVisualizer) {
         for (let i = 0; i < BARS; i++) {

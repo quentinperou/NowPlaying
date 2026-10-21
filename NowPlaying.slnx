@@ -2,6 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/NowPlaying.Core/NowPlaying.Core.csproj" />
     <Project Path="src/NowPlaying/NowPlaying.csproj" />
+    <Project Path="src/NowPlaying.Widgets/NowPlaying.Widgets.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/NowPlaying.Tests/NowPlaying.Tests.csproj" />

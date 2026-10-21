@@ -40,6 +40,25 @@ public sealed class AppSettings
 
     public WidgetStyle Widget { get; set; } = new();
 
+    /// <summary>The floating widget, anywhere on the screen and above the other windows (off until the user asks).</summary>
+    public bool FloatingEnabled { get; set; }
+
+    public WidgetStyle Floating { get; set; } = WidgetStyle.DefaultFloating();
+
+    /// <summary>Top-left corner of the floating widget, in screen pixels; null: the bottom right of the main screen.</summary>
+    public int? FloatingX { get; set; }
+
+    public int? FloatingY { get; set; }
+
+    /// <summary>Above the other windows (off: under them, as a widget on the desktop).</summary>
+    public bool FloatingTopmost { get; set; } = true;
+
+    /// <summary>The floating widget cannot be dragged (no move by mistake).</summary>
+    public bool FloatingLocked { get; set; }
+
+    /// <summary>The overlay pages for OBS are served (off until the user asks: most people do not stream).</summary>
+    public bool OverlayEnabled { get; set; }
+
     public OverlayStyle OverlayBar { get; set; } = OverlayStyle.DefaultBar();
 
     public OverlayStyle OverlayCard { get; set; } = OverlayStyle.DefaultCard();
@@ -75,6 +94,7 @@ public sealed class AppSettings
                 if (!SupportedLanguages.Contains(settings.Language))
                     settings.Language = SystemLanguage;
                 settings.Widget = (settings.Widget ?? new WidgetStyle()).Normalized();
+                settings.Floating = (settings.Floating ?? WidgetStyle.DefaultFloating()).Normalized();
                 settings.OverlayBar = (settings.OverlayBar ?? OverlayStyle.DefaultBar()).Normalized(OverlayLayout.Bar);
                 settings.OverlayCard = (settings.OverlayCard ?? OverlayStyle.DefaultCard()).Normalized(OverlayLayout.Card);
                 if (settings.OverlayPort is < 1024 or > 65535)

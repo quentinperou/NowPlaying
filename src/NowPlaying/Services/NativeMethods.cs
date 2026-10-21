@@ -122,7 +122,11 @@ internal static class NativeMethods
     [DllImport("user32.dll")]
     public static extern int GetDpiForWindow(IntPtr hwnd);
 
+    public const int MONITOR_DEFAULTTONULL = 0;
     public const int MONITOR_DEFAULTTOPRIMARY = 1;
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr MonitorFromRect(ref RECT rect, int flags);
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     public struct MONITORINFO
@@ -142,11 +146,15 @@ internal static class NativeMethods
     // ---------------------------------------------------------------- Windows
 
     public const int GWL_EXSTYLE = -20;
+    public const int GWLP_HWNDPARENT = -8; // the owner of a top-level window
     public const int WS_EX_TOOLWINDOW = 0x00000080;
     public const int WS_EX_NOACTIVATE = 0x08000000;
+    public const int WS_EX_TRANSPARENT = 0x00000020; // with WS_EX_LAYERED: the mouse goes through
+    public const int WM_WINDOWPOSCHANGED = 0x0047;
     public const int WS_POPUP = unchecked((int)0x80000000);
 
     public static readonly IntPtr HWND_TOPMOST = new(-1);
+    public static readonly IntPtr HWND_NOTOPMOST = new(-2);
     public const int SWP_NOSIZE = 0x0001;
     public const int SWP_NOMOVE = 0x0002;
     public const int SWP_NOZORDER = 0x0004;
@@ -164,6 +172,15 @@ internal static class NativeMethods
 
     [DllImport("user32.dll")]
     public static extern bool SetForegroundWindow(IntPtr hwnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool AllowSetForegroundWindow(int processId);
+
+    [DllImport("kernel32.dll")]
+    public static extern bool GetNamedPipeClientProcessId(Microsoft.Win32.SafeHandles.SafePipeHandle pipe, out uint processId);
+
+    [DllImport("kernel32.dll")]
+    public static extern bool GetNamedPipeServerProcessId(Microsoft.Win32.SafeHandles.SafePipeHandle pipe, out uint processId);
 
     [DllImport("user32.dll")]
     public static extern IntPtr GetForegroundWindow();
@@ -190,6 +207,8 @@ internal static class NativeMethods
     public const int DWMWA_SYSTEMBACKDROP_TYPE = 38;
     public const int DWMSBT_NONE = 1;
     public const int DWMWCP_DONOTROUND = 1;
+    public const int DWMWCP_ROUND = 2;
+    public const int DWMWCP_ROUNDSMALL = 3;
     public const int DWMWA_COLOR_NONE = unchecked((int)0xFFFFFFFE);
 
     [DllImport("dwmapi.dll")]
@@ -197,6 +216,35 @@ internal static class NativeMethods
 
     [DllImport("dwmapi.dll")]
     public static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
+    // ---------------------------------------------------------------- The frosted glass of the floating widget
+
+    // What is behind a window, blurred by Windows (the backdrop of its acrylic), for the compositor's HostBackdropBrush.
+    public const int DWMWA_USE_HOSTBACKDROPBRUSH = 17;
+    public const int WS_EX_NOREDIRECTIONBITMAP = 0x00200000;
+    public const int SW_HIDE = 0;
+    public const int SW_SHOWNOACTIVATE = 4;
+
+    [DllImport("user32.dll")]
+    public static extern bool ShowWindow(IntPtr hwnd, int command);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct DispatcherQueueOptions
+    {
+        public int dwSize;
+        public int threadType;    // 2: DQTYPE_THREAD_CURRENT
+        public int apartmentType; // 2: DQTAT_COM_STA
+    }
+
+    // The compositor needs a DispatcherQueue on its thread (the UI thread).
+    [DllImport("CoreMessaging.dll")]
+    public static extern int CreateDispatcherQueueController(DispatcherQueueOptions options, out IntPtr controller);
+
+    [ComImport, Guid("29E691FA-4567-4DCA-B319-D0F207EB6807"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    public interface ICompositorDesktopInterop
+    {
+        void CreateDesktopWindowTarget(IntPtr hwnd, [MarshalAs(UnmanagedType.Bool)] bool isTopmost, out IntPtr target);
+    }
 
     // ---------------------------------------------------------------- Screen pixels (the color behind the widget)
 

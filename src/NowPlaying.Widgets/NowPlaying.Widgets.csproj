@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The widget of the Windows Widgets board (Win+W): a small COM server that Windows starts while the widget is on
+       the board. It takes what plays from NowPlaying (its local server, as the OBS overlays do) and sends it the
+       buttons. Its package identity comes from the sparse package (package/AppxManifest.xml). -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <AssemblyName>NowPlaying.Widgets</AssemblyName>
+    <RootNamespace>NowPlaying.Widgets</RootNamespace>
+    <ApplicationIcon>..\NowPlaying\Assets\NowPlaying.ico</ApplicationIcon>
+    <Product>NowPlaying</Product>
+    <!-- Windows App SDK without its runtime installer: the widget part (2.4 MB) ships with the app. -->
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <!-- Started by the board when it opens: light and quick, like the app. -->
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+    <PublishReadyToRun>true</PublishReadyToRun>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Microsoft Software License Terms of the Windows App SDK: redistributable with an app (see LICENSE.md). -->
+    <PackageReference Include="Microsoft.WindowsAppSDK.Widgets" Version="2.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The pictures of the package (its icon, the preview of the widget) also next to the exe: the Widgets board
+         reads them from the package's external location, the install folder. -->
+    <None Include="package\Assets\*.png" Link="Assets\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

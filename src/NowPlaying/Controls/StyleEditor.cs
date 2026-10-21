@@ -15,19 +15,62 @@ internal sealed class StyleEditor : StackPanel
     private static readonly string[] Swatches = ["#5B6CF0", "#E5484D", "#F5A524", "#30A46C", "#12A594", "#8E4EC6", "#1B1B1F", "#F2F2F2"];
 
     private readonly SurfaceStyle _style;
+    private readonly bool _glassOpacity;
     private readonly Border _customRow;
     private readonly Border _opacityRow;
     private readonly TextBox _hex;
     private readonly WrapPanel _swatches = new() { VerticalAlignment = VerticalAlignment.Center };
 
+    // The choices of the floating widget: its glass blurred (frosted) or not (clear).
+    private enum Look
+    {
+        Frosted,
+        Clear,
+        Cover,
+        Custom,
+    }
+
     /// <param name="defaults">The default style, given back by a double click on a slider.</param>
     /// <param name="elements">The parts that can be hidden: their label, whether shown, and how to change it.</param>
-    public StyleEditor(SurfaceStyle style, SurfaceStyle defaults, bool overlay, IEnumerable<(string Label, Func<bool> Get, Action<bool> Set)> elements, bool withVisualizer)
+    /// <param name="glassOpacity">The opacity applies to the glass too (the veil of the floating widget).</param>
+    /// <param name="blur">
+    /// The floating widget: the glass offered twice, blurred ("Glass") or not ("Transparent"), in one list with the
+    /// other colors; how to read and set the blur.
+    /// </param>
+    /// <param name="afterColor">A row of that widget shown right under the color and its opacity (the shadow of the floating widget).</param>
+    /// <param name="colorHint">The key of the text under "Color", when that surface needs its own.</param>
+    public StyleEditor(SurfaceStyle style, SurfaceStyle defaults, bool overlay, IEnumerable<(string Label, Func<bool> Get, Action<bool> Set)> elements, bool withVisualizer,
+        bool glassOpacity = false, (Func<bool> Get, Action<bool> Set)? blur = null, UIElement? afterColor = null, string? colorHint = null)
     {
         _style = style;
+        _glassOpacity = glassOpacity;
 
-        Children.Add(Ui.Card("", Strings.Get("StyleColor"), Strings.Get("StyleColorHint"),
-            Segmented.Of(
+        UIElement colors;
+        if (blur is { } frost)
+        {
+            var current = style.ColorMode switch
+            {
+                ColorMode.Cover => Look.Cover,
+                ColorMode.Custom => Look.Custom,
+                _ => frost.Get() ? Look.Frosted : Look.Clear,
+            };
+            colors = Segmented.Of(
+                [
+                    (Look.Frosted, Strings.Get("ColorModeFrosted")),
+                    (Look.Clear, Strings.Get("ColorModeGlass")),
+                    (Look.Cover, Strings.Get("ColorModeCover")),
+                    (Look.Custom, Strings.Get("ColorModeCustom")),
+                ],
+                current, look =>
+                {
+                    style.ColorMode = look switch { Look.Cover => ColorMode.Cover, Look.Custom => ColorMode.Custom, _ => ColorMode.Glass };
+                    frost.Set(look == Look.Frosted);
+                    ShowColorRows();
+                    Raise();
+                });
+        }
+        else
+            colors = Segmented.Of(
                 [
                     (ColorMode.Glass, Strings.Get(overlay ? "ColorModeFrosted" : "ColorModeGlass")),
                     (ColorMode.Cover, Strings.Get("ColorModeCover")),
@@ -38,7 +81,8 @@ internal sealed class StyleEditor : StackPanel
                     style.ColorMode = mode;
                     ShowColorRows();
                     Raise();
-                })));
+                });
+        Children.Add(Ui.Card("", Strings.Get("StyleColor"), Strings.Get(colorHint ?? (blur is null ? "StyleColorHint" : "FloatingColorHint")), colors));
 
         foreach (string color in Swatches)
         {
@@ -71,6 +115,8 @@ internal sealed class StyleEditor : StackPanel
         _opacityRow = Ui.SubCard(Strings.Get("StyleOpacity"),
             Ui.Slider(20, 100, style.Opacity, defaults.Opacity, "%", v => { style.Opacity = v; Raise(); }, Strings.Get("StyleOpacity")));
         Children.Add(_opacityRow);
+        if (afterColor is not null)
+            Children.Add(afterColor);
 
         Children.Add(Ui.Card("", Strings.Get("StyleWidth"), null,
             Ui.Slider(style.WidthRange.Min, style.WidthRange.Max, style.Width, defaults.Width, "px", v => { style.Width = v; Raise(); }, Strings.Get("StyleWidth"))));
@@ -124,7 +170,7 @@ internal sealed class StyleEditor : StackPanel
     private void ShowColorRows()
     {
         _customRow.Visibility = _style.ColorMode == ColorMode.Custom ? Visibility.Visible : Visibility.Collapsed;
-        _opacityRow.Visibility = _style.ColorMode == ColorMode.Glass ? Visibility.Collapsed : Visibility.Visible;
+        _opacityRow.Visibility = _style.ColorMode == ColorMode.Glass && !_glassOpacity ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void MarkSwatch()

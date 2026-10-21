@@ -32,7 +32,11 @@ public partial class App : Application
 
     internal static TrayHost Tray { get; private set; } = null!;
 
-    internal static TaskbarWidget Widget { get; private set; } = null!;
+    /// <summary>The widget in the taskbar, which runs in a process of its own.</summary>
+    internal static TaskbarHost Taskbar { get; private set; } = null!;
+
+    /// <summary>The floating widget, built the first time it is turned on.</summary>
+    internal static FloatingWidget? Floating { get; private set; }
 
     /// <summary>A style changed (the window's previews follow).</summary>
     public static event EventHandler? StyleChanged;
@@ -40,6 +44,13 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // The widget process, started by the app (TaskbarHost): the widget of the taskbar, nothing else.
+        if (e.Args is [TaskbarHost.Argument, var pipe])
+        {
+            TaskbarClient.Run(this, pipe);
+            return;
+        }
 
         _instance = SingleInstance.TryStart(e.Args, _ => Dispatcher.BeginInvoke(() => OpenMainWindow()));
         if (_instance is null)
@@ -67,25 +78,34 @@ public partial class App : Application
         Spectrum = new AudioSpectrum(Dispatcher);
         Overlay = new OverlayServer();
         Overlay.ClientsChanged += (_, _) => Dispatcher.BeginInvoke(UpdateOverlayLevels);
+        Overlay.CommandReceived += command => Dispatcher.BeginInvoke(() => _ = command switch
+        {
+            "next" => Media.NextAsync(),
+            "previous" => Media.PreviousAsync(),
+            _ => Media.TogglePlayPauseAsync(),
+        });
+        Overlay.PagesEnabled = Settings.OverlayEnabled;
         Overlay.Start(Settings.OverlayPort);
 
         Tray = new TrayHost();
         Tray.IconClicked += (_, _) => OpenMainWindow();
         Tray.MenuRequested += (_, _) => PopupMenu.ShowTray();
-        Tray.TaskbarCreated += (_, _) => Widget.FindTaskbarButtons();
 
-        Widget = new TaskbarWidget();
-        Widget.BackdropChanged += (_, _) =>
+        Taskbar = new TaskbarHost(Dispatcher);
+        Taskbar.BackdropChanged += (_, _) => StyleChanged?.Invoke(null, EventArgs.Empty);
+        Taskbar.WeatherChanged += (_, _) => StyleChanged?.Invoke(null, EventArgs.Empty);
+        Taskbar.CommandReceived += command => _ = command switch
         {
-            RefreshWidget();
-            StyleChanged?.Invoke(null, EventArgs.Empty);
+            "next" => Media.NextAsync(),
+            "previous" => Media.PreviousAsync(),
+            _ => Media.TogglePlayPauseAsync(),
         };
-        Widget.TaskbarButtonsChanged += (_, _) => StyleChanged?.Invoke(null, EventArgs.Empty);
-        Widget.View.Spectrum = Spectrum;
-        Wire(Widget.View);
-        Widget.View.MenuRequested += (_, _) => PopupMenu.ShowWidget();
-        // The window exists (handle, hooks) before it is shown for the first time.
-        new System.Windows.Interop.WindowInteropHelper(Widget).EnsureHandle();
+        Taskbar.SeekRequested += fraction => _ = Media.SeekAsync(fraction);
+        // Its menu is shown by the widget process (it got the click, so its menu may take the focus, and closes when
+        // the user clicks elsewhere): the choices come back here.
+        Taskbar.PinRequested += id => Media.Pin(id);
+        Taskbar.OpenRequested += (_, _) => OpenMainWindow(MainPage.Widget);
+        Taskbar.QuitRequested += (_, _) => Quit();
 
         Media.Changed += (_, _) => MediaChanged();
         ApplyStyles(save: false);
@@ -109,6 +129,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         s_saveTimer?.Stop();
+        Taskbar?.Dispose();
         Overlay?.Dispose();
         Spectrum?.Dispose();
         Tray?.Dispose();
@@ -129,28 +150,66 @@ public partial class App : Application
         UpdateOverlayLevels();
     }
 
-    /// <summary>The widget in the taskbar: its colors (taskbar light or dark, the cover), what it shows, where it is.</summary>
+    /// <summary>
+    /// The widgets: the one in the taskbar (its process resolves its colors and its place) and the floating one, what
+    /// they show and in which style.
+    /// </summary>
     internal static void RefreshWidget()
     {
         var media = Media.Current;
-        var style = Settings.Widget;
-        Widget.View.ApplyStyle(style, SurfaceColors.Resolve(style, media?.CoverColor, TaskbarIsDark, overlay: false));
         // Nothing known to Windows: hidden, or the last track greyed if the user asked to keep it.
         if (media is not null)
             s_lastMedia = media;
         bool idle = media is null;
-        Widget.View.ShowMedia(idle ? s_lastMedia : media, idle);
-        bool wanted = Settings.WidgetEnabled && (media is not null || (style.Idle == IdleMode.KeepLast && s_lastMedia is not null));
-        Widget.SetWanted(wanted);
+        var shown = idle ? s_lastMedia : media;
+        bool Wanted(bool enabled, WidgetStyle style) => enabled && (media is not null || (style.Idle == IdleMode.KeepLast && s_lastMedia is not null));
+
+        var widget = Settings.Widget;
+        Taskbar.Update(widget, shown, idle, Wanted(Settings.WidgetEnabled, widget), Settings.WidgetEnabled,
+            Media.Sources, Settings.Language, Settings.Theme);
+
+        var floating = Settings.Floating;
+        if (Settings.FloatingEnabled && Floating is null)
+            CreateFloating();
+        if (Floating is not null)
+        {
+            // Over any window: the colors of a dark surface (the glass is dark there), its veil as opaque as asked.
+            Floating.OnTop = Settings.FloatingTopmost;
+            Floating.Locked = Settings.FloatingLocked;
+            // "Glass" blurs what is behind, "Transparent" does not (both are the glass color mode).
+            bool frosted = floating.Blur && floating.ColorMode == ColorMode.Glass;
+            Floating.View.ApplyStyle(floating, FloatingColors(floating, shown?.CoverColor), frosted ? floating.CornerRadius : null);
+            Floating.SetLook(frosted, floating.CornerRadius, floating.Shadow ? floating.ShadowOpacity / 100.0 : 0);
+            Floating.View.ShowMedia(shown, idle);
+            Floating.SetWanted(Wanted(Settings.FloatingEnabled, floating));
+        }
+    }
+
+    /// <summary>The colors of the floating widget (also those of its preview in the window).</summary>
+    internal static SurfaceColors FloatingColors(WidgetStyle style, Rgb? coverColor) =>
+        SurfaceColors.Resolve(style, coverColor, onDarkSurface: true, overlay: true, glassOpacity: true);
+
+    private static void CreateFloating()
+    {
+        Floating = new FloatingWidget();
+        Floating.View.Spectrum = Spectrum;
+        Wire(Floating.View);
+        Floating.View.MenuRequested += (_, _) => PopupMenu.ShowFloating();
+        Floating.PlaceChanged += (_, place) =>
+        {
+            (Settings.FloatingX, Settings.FloatingY) = (place.X, place.Y);
+            Settings.Save();
+        };
+        Floating.PlaceAt(Settings.FloatingX, Settings.FloatingY);
     }
 
     private static MediaSnapshot? s_lastMedia;
 
     /// <summary>
-    /// Whether the taskbar behind the widget is dark: read on the screen once the widget is placed (any taskbar color,
+    /// Whether the taskbar behind the widget is dark: read on the screen by the widget once placed (any taskbar color,
     /// or a wallpaper through a see-through taskbar), else Windows' light / dark setting.
     /// </summary>
-    internal static bool TaskbarIsDark => Widget?.BackdropIsDark ?? WindowsSettings.TaskbarIsDark;
+    internal static bool TaskbarIsDark => Taskbar?.BackdropIsDark ?? WindowsSettings.TaskbarIsDark;
 
     /// <summary>
     /// The bars of the bar overlay: the real spectrum is computed here and sent while a page of it is open and
@@ -232,6 +291,47 @@ public partial class App : Application
         RefreshWidget();
     }
 
+    /// <summary>The OBS pages on or off (the server stays, for the widget of the Windows Widgets board).</summary>
+    internal static void SetOverlayEnabled(bool enabled)
+    {
+        Settings.OverlayEnabled = enabled;
+        Settings.Save();
+        Overlay.PagesEnabled = enabled;
+        UpdateOverlayLevels();
+    }
+
+    internal static void SetFloatingEnabled(bool enabled)
+    {
+        Settings.FloatingEnabled = enabled;
+        Settings.Save();
+        RefreshWidget();
+        StyleChanged?.Invoke(null, EventArgs.Empty);
+    }
+
+    internal static void SetFloatingTopmost(bool onTop)
+    {
+        Settings.FloatingTopmost = onTop;
+        Settings.Save();
+        RefreshWidget();
+        StyleChanged?.Invoke(null, EventArgs.Empty);
+    }
+
+    internal static void SetFloatingLocked(bool locked)
+    {
+        Settings.FloatingLocked = locked;
+        Settings.Save();
+        RefreshWidget();
+        StyleChanged?.Invoke(null, EventArgs.Empty);
+    }
+
+    /// <summary>The floating widget back at the bottom right of the main screen.</summary>
+    internal static void ResetFloatingPosition()
+    {
+        (Settings.FloatingX, Settings.FloatingY) = (null, null);
+        Settings.Save();
+        Floating?.PlaceAt(null, null);
+    }
+
     internal static void RestartOverlayServer()
     {
         Overlay.Start(Settings.OverlayPort);
@@ -282,8 +382,10 @@ public partial class App : Application
             AppTheme.Dark => ThemeMode.Dark,
             _ => ThemeMode.System,
         };
-        // The widget is not themed (it draws its own colors): it stays see-through.
-        Widget?.KeepTransparent();
+        // The widgets are not themed (they draw their own colors): they stay see-through.
+        Floating?.KeepTransparent();
+        foreach (var widget in Current.Windows.OfType<TaskbarWidget>())
+            widget.KeepTransparent();
     }
 
     /// <summary>Sets the UI language: <see cref="AppSettings.SystemLanguage"/> or a culture name ("en", "fr").</summary>
@@ -317,6 +419,7 @@ public partial class App : Application
             if (window.LanguageChanged is { } reopenOn)
             {
                 ApplyLanguage(Settings.Language);
+                RefreshWidget(); // the menu of the taskbar widget follows
                 Current.Dispatcher.BeginInvoke(() => OpenMainWindow(reopenOn), DispatcherPriority.ApplicationIdle);
             }
             else

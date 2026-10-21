@@ -27,3 +27,4 @@ SOFTWARE.
 | Component | License | Use |
 |-----------|---------|-----|
 | [NAudio](https://github.com/naudio/NAudio) | MIT | Volume of the app that plays (Core Audio), sound of the PC for the spectrum (WASAPI loopback) |
+| [Windows App SDK](https://github.com/microsoft/WindowsAppSDK), widgets component (`Microsoft.WindowsAppSDK.Widgets`) | Microsoft Software License Terms (redistributable with an app) | The widget of the Windows Widgets board (`Microsoft.Windows.Widgets.dll`, shipped with NowPlaying) |

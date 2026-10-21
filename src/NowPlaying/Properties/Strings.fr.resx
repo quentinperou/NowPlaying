@@ -82,6 +82,45 @@
   <data name="ErrorUpdateRateLimited" xml:space="preserve">
     <value>GitHub limite le nombre de vérifications, réessayez dans un moment.</value>
   </data>
+  <data name="FloatingColorHint" xml:space="preserve">
+    <value>« Verre » floute ce qui est derrière le widget (Windows fixe la force du flou), « Transparent » non ; l&apos;opacité règle le voile</value>
+  </data>
+  <data name="FloatingLocked" xml:space="preserve">
+    <value>Verrouiller la position</value>
+  </data>
+  <data name="FloatingLockedHint" xml:space="preserve">
+    <value>Il ne peut plus être déplacé par erreur</value>
+  </data>
+  <data name="FloatingPosition" xml:space="preserve">
+    <value>Position</value>
+  </data>
+  <data name="FloatingPositionHint" xml:space="preserve">
+    <value>Faites glisser le widget où vous voulez, sa place est gardée. Ce bouton le remet en bas à droite de l&apos;écran principal</value>
+  </data>
+  <data name="FloatingPreviewHint" xml:space="preserve">
+    <value>Aperçu sur une image : survolez-le, molette pour le volume</value>
+  </data>
+  <data name="FloatingReset" xml:space="preserve">
+    <value>Le replacer</value>
+  </data>
+  <data name="FloatingShadow" xml:space="preserve">
+    <value>Ombre</value>
+  </data>
+  <data name="FloatingShadowHint" xml:space="preserve">
+    <value>Sous le widget, plus ou moins sombre</value>
+  </data>
+  <data name="FloatingShow" xml:space="preserve">
+    <value>Afficher le widget flottant</value>
+  </data>
+  <data name="FloatingShowHint" xml:space="preserve">
+    <value>Où vous voulez sur l&apos;écran, au-dessus des autres fenêtres. Faites-le glisser avec la souris pour le déplacer</value>
+  </data>
+  <data name="FloatingTopmost" xml:space="preserve">
+    <value>Toujours au premier plan</value>
+  </data>
+  <data name="FloatingTopmostHint" xml:space="preserve">
+    <value>Désactivé, il reste sous les fenêtres que vous utilisez, comme un widget posé sur le bureau</value>
+  </data>
   <data name="IdleHide" xml:space="preserve">
     <value>Cacher le widget</value>
   </data>
@@ -100,8 +139,14 @@
   <data name="LayoutCard" xml:space="preserve">
     <value>Carte</value>
   </data>
+  <data name="Live" xml:space="preserve">
+    <value>EN DIRECT</value>
+  </data>
   <data name="MenuCustomize" xml:space="preserve">
     <value>Personnaliser…</value>
+  </data>
+  <data name="MenuHideFloating" xml:space="preserve">
+    <value>Masquer le widget flottant</value>
   </data>
   <data name="MenuOpen" xml:space="preserve">
     <value>Ouvrir NowPlaying</value>
@@ -109,8 +154,11 @@
   <data name="MenuQuit" xml:space="preserve">
     <value>Quitter NowPlaying</value>
   </data>
+  <data name="MenuShowFloating" xml:space="preserve">
+    <value>Widget flottant</value>
+  </data>
   <data name="MenuShowWidget" xml:space="preserve">
-    <value>Afficher le widget</value>
+    <value>Widget dans la barre des tâches</value>
   </data>
   <data name="MenuSource" xml:space="preserve">
     <value>Source</value>
@@ -132,6 +180,15 @@
   </data>
   <data name="OverlayAddressHint" xml:space="preserve">
     <value>Source Navigateur · largeur {0}, hauteur {1}</value>
+  </data>
+  <data name="OverlayColorHint" xml:space="preserve">
+    <value>« Verre » est un voile sombre (OBS ne peut pas flouter la scène derrière une source Navigateur) ; « Pochette » prend la couleur dominante de chaque morceau</value>
+  </data>
+  <data name="OverlayEnabled" xml:space="preserve">
+    <value>Activer l&apos;overlay OBS</value>
+  </data>
+  <data name="OverlayEnabledHint" xml:space="preserve">
+    <value>Des pages pour OBS (source Navigateur) qui montrent ce qui joue. Désactivé, OBS ne reçoit rien</value>
   </data>
   <data name="OverlayLayout" xml:space="preserve">
     <value>Modèle à régler</value>
@@ -157,6 +214,9 @@
   <data name="PageAbout" xml:space="preserve">
     <value>À propos</value>
   </data>
+  <data name="PageFloating" xml:space="preserve">
+    <value>Widget flottant</value>
+  </data>
   <data name="PageGeneral" xml:space="preserve">
     <value>Général</value>
   </data>
@@ -177,6 +237,9 @@
   </data>
   <data name="QuitDescription" xml:space="preserve">
     <value>Le widget et les overlays s&apos;arrêtent jusqu&apos;au prochain lancement de NowPlaying (menu Démarrer).</value>
+  </data>
+  <data name="SectionAdvanced" xml:space="preserve">
+    <value>Avancé</value>
   </data>
   <data name="SectionBehavior" xml:space="preserve">
     <value>Comportement</value>
