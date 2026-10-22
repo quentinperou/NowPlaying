@@ -18,6 +18,7 @@ internal sealed class StyleEditor : StackPanel
     private readonly bool _glassOpacity;
     private readonly Border _customRow;
     private readonly Border _opacityRow;
+    private readonly StackPanel _opacity;
     private readonly TextBox _hex;
     private readonly WrapPanel _swatches = new() { VerticalAlignment = VerticalAlignment.Center };
 
@@ -39,8 +40,10 @@ internal sealed class StyleEditor : StackPanel
     /// </param>
     /// <param name="afterColor">A row of that widget shown right under the color and its opacity (the shadow of the floating widget).</param>
     /// <param name="colorHint">The key of the text under "Color", when that surface needs its own.</param>
+    /// <param name="defaultOpacity">The opacity a double click gives back, when it depends on the look chosen.</param>
     public StyleEditor(SurfaceStyle style, SurfaceStyle defaults, bool overlay, IEnumerable<(string Label, Func<bool> Get, Action<bool> Set)> elements, bool withVisualizer,
-        bool glassOpacity = false, (Func<bool> Get, Action<bool> Set)? blur = null, UIElement? afterColor = null, string? colorHint = null)
+        bool glassOpacity = false, (Func<bool> Get, Action<bool> Set)? blur = null, UIElement? afterColor = null, string? colorHint = null,
+        Func<int>? defaultOpacity = null)
     {
         _style = style;
         _glassOpacity = glassOpacity;
@@ -66,6 +69,7 @@ internal sealed class StyleEditor : StackPanel
                     style.ColorMode = look switch { Look.Cover => ColorMode.Cover, Look.Custom => ColorMode.Custom, _ => ColorMode.Glass };
                     frost.Set(look == Look.Frosted);
                     ShowColorRows();
+                    LookChanged?.Invoke(this, EventArgs.Empty);
                     Raise();
                 });
         }
@@ -112,8 +116,9 @@ internal sealed class StyleEditor : StackPanel
         _customRow = Ui.SubCard(Strings.Get("StyleCustomColor"), customControls);
         Children.Add(_customRow);
 
-        _opacityRow = Ui.SubCard(Strings.Get("StyleOpacity"),
-            Ui.Slider(20, 100, style.Opacity, defaults.Opacity, "%", v => { style.Opacity = v; Raise(); }, Strings.Get("StyleOpacity")));
+        _opacity = Ui.Slider(20, 100, style.Opacity, defaultOpacity ?? (() => defaults.Opacity), "%", v => { style.Opacity = v; Raise(); },
+            Strings.Get("StyleOpacity"));
+        _opacityRow = Ui.SubCard(Strings.Get("StyleOpacity"), _opacity);
         Children.Add(_opacityRow);
         if (afterColor is not null)
             Children.Add(afterColor);
@@ -156,6 +161,12 @@ internal sealed class StyleEditor : StackPanel
     }
 
     public event EventHandler? Changed;
+
+    /// <summary>Another look chosen (the floating widget): its page gives it its own opacity and shadow.</summary>
+    public event EventHandler? LookChanged;
+
+    /// <summary>Shows the opacity of the style, changed outside the editor.</summary>
+    public void ShowOpacity() => Ui.SetSlider(_opacity, _style.Opacity);
 
     private void Raise() => Changed?.Invoke(this, EventArgs.Empty);
 

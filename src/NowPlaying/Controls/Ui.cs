@@ -131,20 +131,25 @@ internal static class Ui
     /// A slider with its value written on its right ("280 px"); a double click puts it back to
     /// <paramref name="defaultValue"/> (asked by the author).
     /// </summary>
-    public static StackPanel Slider(int min, int max, int value, int defaultValue, string unit, Action<int> changed, string automationName, double width = 200)
+    public static StackPanel Slider(int min, int max, int value, int defaultValue, string unit, Action<int> changed, string automationName, double width = 200) =>
+        Slider(min, max, value, () => defaultValue, unit, changed, automationName, width);
+
+    /// <summary>A slider whose default value depends on another setting (the opacity of each look of the floating widget).</summary>
+    public static StackPanel Slider(int min, int max, int value, Func<int> defaultValue, string unit, Action<int> changed, string automationName, double width = 200)
     {
         var row = new StackPanel { Orientation = Orientation.Horizontal };
         var slider = new Slider
         {
             Minimum = min, Maximum = max, Value = value, Width = width, IsSnapToTickEnabled = true, TickFrequency = 1,
             VerticalAlignment = VerticalAlignment.Center,
-            ToolTip = Strings.Format("SliderResetHint", defaultValue, unit),
+            ToolTip = Strings.Format("SliderResetHint", defaultValue(), unit),
         };
         System.Windows.Automation.AutomationProperties.SetName(slider, automationName);
+        slider.ToolTipOpening += (_, _) => slider.ToolTip = Strings.Format("SliderResetHint", defaultValue(), unit);
         slider.MouseDoubleClick += (_, e) =>
         {
             e.Handled = true;
-            slider.Value = Math.Clamp(defaultValue, min, max);
+            slider.Value = Math.Clamp(defaultValue(), min, max);
         };
         var label = new TextBlock { Width = 56, TextAlignment = TextAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Text = $"{value} {unit}" };
         label.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorSecondaryBrush");
@@ -157,6 +162,13 @@ internal static class Ui
         row.Children.Add(slider);
         row.Children.Add(label);
         return row;
+    }
+
+    /// <summary>Moves the slider of a <see cref="Slider"/> row (its value is then written as when dragged).</summary>
+    public static void SetSlider(StackPanel row, int value)
+    {
+        if (row.Children[0] is Slider slider)
+            slider.Value = value;
     }
 
     public static ComboBox Choice<T>(IEnumerable<(T Value, string Text)> items, T selected, Action<T> changed, double width = 260)

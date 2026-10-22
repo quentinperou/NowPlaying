@@ -85,8 +85,14 @@
   <data name="ErrorUpdateRateLimited" xml:space="preserve">
     <value>GitHub limits the number of checks, try again in a while.</value>
   </data>
+  <data name="FloatingBlur" xml:space="preserve">
+    <value>Blur</value>
+  </data>
+  <data name="FloatingBlurHint" xml:space="preserve">
+    <value>0 %: sharp; 100 %: Windows&apos; blur, the strongest there is</value>
+  </data>
   <data name="FloatingColorHint" xml:space="preserve">
-    <value>“Glass” blurs what is behind the widget (Windows sets how much), “Transparent” does not; the opacity sets the veil</value>
+    <value>“Glass” blurs what is behind, “Transparent” does not; each starts from its own opacity, blur and shadow</value>
   </data>
   <data name="FloatingLocked" xml:space="preserve">
     <value>Lock its position</value>

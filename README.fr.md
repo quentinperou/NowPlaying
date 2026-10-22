@@ -48,8 +48,9 @@
 
 - Un **widget flottant**, où vous voulez sur l'écran : glissez-le, gardez-le au-dessus des fenêtres ou dessous,
   verrouillez sa place.
-- **Verre dépoli** (ce qui est derrière apparaît flou), transparent, la couleur de la pochette ou la vôtre ; une ombre
-  si vous voulez.
+- **Verre** qui accroche la lumière sur ses bords, aux couleurs de ce qu'il y a derrière, flouté autant que vous
+  voulez ; transparent, la couleur de la pochette ou la vôtre ; une ombre si vous voulez.
+- Son texte devient clair ou sombre selon ce qu'il y a derrière.
 
 ### Dans le tableau Widgets
 

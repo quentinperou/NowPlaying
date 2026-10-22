@@ -46,8 +46,9 @@
 ### On the desktop
 
 - A **floating widget**, anywhere on the screen: drag it, keep it above the windows or under them, lock its place.
-- **Frosted glass** (what is behind it shows blurred), transparent, the color of the cover or your own; a shadow if
-  you like.
+- **Glass** catching the light on its edges, with the colors of what is behind it, as blurred as you like;
+  transparent, the color of the cover or your own; a shadow if you like.
+- Its text turns dark or light after what is behind it.
 
 ### In the Widgets board
 

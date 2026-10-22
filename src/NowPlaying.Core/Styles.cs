@@ -120,8 +120,19 @@ public sealed class WidgetStyle : SurfaceStyle
 
     public IdleMode Idle { get; set; } = IdleMode.Hide;
 
-    /// <summary>The floating widget only: what is behind it shows blurred, under a veil of the style's opacity.</summary>
+    /// <summary>The floating widget only: the "Glass" look (blurred) rather than "Transparent", both of the Glass color mode.</summary>
     public bool Blur { get; set; }
+
+    /// <summary>
+    /// The floating widget only: how much of Windows' blur shows behind it, 0 (sharp) to 100 % (Windows sets the
+    /// strength; less mixes the sharp background in). -1: a settings file of 0.2.1, set from <see cref="Blur"/> by
+    /// <see cref="Normalized"/>.
+    /// </summary>
+    public int BlurStrength { get; set; } = -1;
+
+    /// <summary>The floating widget only: drawn over a blurred background.</summary>
+    [JsonIgnore]
+    public bool Frosted => BlurStrength > 0;
 
     /// <summary>The floating widget only: a shadow under it, <see cref="ShadowOpacity"/> percent dark.</summary>
     public bool Shadow { get; set; }
@@ -133,7 +144,28 @@ public sealed class WidgetStyle : SurfaceStyle
     public override (int Min, int Max) FontSizeRange => (10, 15);
 
     /// <summary>The floating widget: over any window, so frosted dark glass by default (the blur behind, a light veil).</summary>
-    public static WidgetStyle DefaultFloating() => new() { Width = 300, CornerRadius = 10, Blur = true, Opacity = 40, Shadow = true };
+    public static WidgetStyle DefaultFloating()
+    {
+        var style = new WidgetStyle { Width = 300, CornerRadius = 10, Blur = true };
+        style.ApplyFloatingLook();
+        return style;
+    }
+
+    /// <summary>
+    /// The opacity and the shadow each look of the floating widget starts from (the author, October 22, 2026: they mean
+    /// different things in each look, and come back to these values when he chooses another one): a light veil over
+    /// the blur; a darker one without it, and no shadow (a dark halo around a see-through widget); a nearly solid
+    /// color.
+    /// </summary>
+    public static (int Opacity, bool Shadow, int ShadowOpacity, int BlurStrength) FloatingLook(ColorMode mode, bool blur) => mode switch
+    {
+        ColorMode.Glass when blur => (25, true, 40, 100),
+        ColorMode.Glass => (55, false, 40, 0),
+        _ => (90, true, 40, 0),
+    };
+
+    /// <summary>Gives the opacity, the shadow and the blur of the look chosen (<see cref="SurfaceStyle.ColorMode"/>, <see cref="Blur"/>).</summary>
+    public void ApplyFloatingLook() => (Opacity, Shadow, ShadowOpacity, BlurStrength) = FloatingLook(ColorMode, Blur);
 
     public WidgetStyle Normalized()
     {
@@ -142,6 +174,7 @@ public sealed class WidgetStyle : SurfaceStyle
         if (!Enum.IsDefined(Idle)) Idle = IdleMode.Hide;
         Offset = Math.Clamp(Offset, 0, 600);
         ShadowOpacity = Math.Clamp(ShadowOpacity, 10, 100);
+        BlurStrength = BlurStrength < 0 ? (ColorMode == ColorMode.Glass && Blur ? 100 : 0) : Math.Clamp(BlurStrength, 0, 100);
         return this;
     }
 }

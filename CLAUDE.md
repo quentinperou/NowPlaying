@@ -40,8 +40,40 @@ plays: alternate the builds, several times, before concluding. The floating widg
 
 ## Project status (October 21, 2026)
 
+**Version 0.2.2** (October 22, 2026; installed on the shop PC over 0.2.1 at his request, silently, settings kept,
+the Widgets package kept; he found it "ok"; committed with tag `v0.2.2`, not pushed), all asked by the author while
+trying 0.2.1. He found the visualizer setting
+did nothing, on the floating widget and for OBS. Two causes: the floating widget and the previews of the window keep
+the very style object the window changes, so they never saw the new mode until the next pause (`WidgetView` and
+`OverlayPreview` now take or give back the spectrum at each update, after what the style asks); and his music, played
+quietly (peak −33 dBFS), gave nearly flat bars on the fixed scale: the spectrum now has an automatic gain (up to
+24 dB, `SpectrumAnalyzer`). Checked by UI Automation: the floating widget's preview switches at once, its bars move in
+both modes; the OBS bar receives moving levels (the overlay turned on for the test, then off again as he had it).
+Asked the same morning: each look of the floating widget starts from its own opacity and shadow, given back when he
+picks it (`WidgetStyle.FloatingLook`: Glass 40 % with a shadow, Transparent 55 % without, Cover and Custom 90 % with
+one); a double click on these sliders gives back the look's value. Checked by UI Automation through the four looks.
+Then, also asked by him: a **Blur** slider for the floating widget (0 % sharp to 100 %, Windows' blur, the strongest
+there is: it mixes the sharp background in, `FloatingGlass.Strength`; Glass 100 %, the others 0 % by default; a 0.2.1
+settings file gets 100 % if it was on Glass), and its **text dark or light after what is behind it**, read on a thin
+band around it just outside its shadow (`FloatingWidget.ReadBackdrop`: when it shows or moves, and every 1.5 s only
+while something plays), the color or veil of the style counted over it (`SurfaceColors.Resolve(…, backdrop)`).
+Checked: pictures of the real widget over his white web page at 0, 33, 66 and 100 % (dark text, the blur mixed in);
+CPU with the window closed 3.0–4.7 % of one core (Debug, both widgets, spectrum), as before. With the window open on
+the Floating widget page the Debug build used about 32 %: not looked into yet.
+Then he found the glass far from Apple's "Liquid Glass" (lens distortion, chromatic aberration on the edges). Told
+him: Windows only hands apps a blurred copy of what is behind, so no lens of the sharp background without capturing
+the screen all the time (costly, and the widget would vanish from screenshots and OBS). Four drawn variants shown
+(`.local/maquettes/liquid-glass.html|png`); he chose **C**: a clear veil tinted after what is behind (white over a
+light page, dark over a dark one; Glass now 25 % by default), light on the top of the veil, a bright rim (top left)
+and an inner glow, and colored fringes on the edges. The fringes first had fixed colors (pink, cyan, orange, blue):
+he found them odd over his white page and asked that they come from what is behind: each side now takes the color
+read behind it, vivid, as opaque as it is colorful (none over white, grey or black: `WidgetView.ShowBehind`). The
+edges are a cached layer (`BitmapCache`) over the widget, drawn for Glass and Transparent and any blurred look
+(`App.GlassLook`). Checked by pictures of the real widget over his page and of the window's preview; CPU with the
+window closed 3.6–6.6 % (Debug). README picture: the floating widget of `hero.html` drawn with the new glass.
+
 **Version 0.2.1** (installed on the shop PC over 0.2.0 at his request, silently as the updater does, settings kept,
-the Widgets package kept; not committed), asked by the author while trying 0.2.0:
+the Widgets package kept; commit `059fee5`, tag `v0.2.1`, not pushed), asked by the author while trying 0.2.0:
 
 - a **Sources** page, first in the menu (mock-up `.local/maquettes/page-sources.png`, approved): the player shown is
   the last one started (Automatic) or the first of an order of priority (By priority, with "prefer what plays");
@@ -237,7 +269,8 @@ one would show the desktop behind it) and the widget on a Windows 11 taskbar. Ma
   under it (`FloatingGlass`): the compositor's `HostBackdropBrush` (`DWMWA_USE_HOSTBACKDROPBRUSH`, a
   `DesktopWindowTarget`, a rounded `CompositionGeometricClip`), on also while inactive, any corner radius, no
   shadow of Windows. Its shadow: a third, click-through window (`FloatingShadow`, layered, drawn once). The blur
-  strength is Windows'; the opacity is the veil's.
+  strength is Windows' at most: the Blur slider sets the opacity of the glass layer (the sharp background mixes in);
+  the opacity is the veil's. Its text is dark or light after a band read around it (see "Readable text").
 - **Widgets board**: Windows App SDK widget provider (`Microsoft.WindowsAppSDK.Widgets`, self-contained: only
   `Microsoft.Windows.Widgets.dll` ships), a COM `ExeServer` declared by a sparse unsigned package (publisher OID
   `2.25.311729368913984317654407730594956997722`, `Add-AppxPackage -ExternalLocation <install folder>
@@ -248,7 +281,9 @@ one would show the desktop behind it) and the widget on a Windows 11 taskbar. Ma
 - **Readable text**: in the Transparent mode the text is dark or light after the mean color of the taskbar line just
   above the widget, read on the screen (`ScreenSampler`, a few hundred pixels) when the widget moves or Windows' look
   changes (`WM_SETTINGCHANGE`); before that, Windows' light / dark setting. The Cover and Custom colors choose their
-  text by contrast (`Rgb.IsLight`).
+  text by contrast (`Rgb.IsLight`). The floating widget reads a band around itself, outside its shadow (under it the
+  screen shows the widget itself; excluding it from capture would hide it from screenshots and OBS too), and counts
+  its color or veil over that mean color (`SurfaceColors.Seen`).
 - **Its place**: the Widgets (weather) and Start buttons are drawn by Explorer without windows: found by UI
   Automation (`WidgetsButton`, `StartButton`), on a pool thread, again on `WM_SETTINGCHANGE` and when Explorer
   restarts. Left: after the weather; no room before Start (or icons aligned left): near the clock, left of
@@ -318,12 +353,20 @@ English (default) and French, following the Windows display language or chosen i
   sites it tells no timeline at all (length and position 0): never judge "live" from `Timeline.Extrapolate`, which
   goes on from 0. `dotnet run .local\cs\sessions.cs` prints each session's timeline.
 - A browser gives Windows one media session (its last audible tab): two tabs of one browser are never two players.
+- The window changes the style objects of the settings in place, and the floating widget and the previews keep those
+  same objects: a view cannot find a change by comparing the new style with the one it keeps. Follow what the style
+  asks at each update instead (`WidgetView.HoldSpectrum`). The taskbar widget gets a copy through the pipe.
+- The spectrum's loudness depends on the player's volume (loopback captures the mix): `.local\cs\loopback.cs`
+  prints the level of the default output.
 - To see a menu without the mouse: post the tray icon's callback (`WM_APP + 1`, lParam `WM_CONTEXTMENU`) to the
   hidden "NowPlaying" window, picture the popup's rectangle, post it again to close the menu.
 
 ## To do
 
-- [ ] The author installs 0.2.1, tries the Sources page with real players, the widget menus, the drag of the floating
-      widget, OBS itself, Spotify.
+- [ ] The author pushes from home: the repository has no remote yet (the GitHub repository `quentinperou/NowPlaying`
+      is to be created), three commits and three lightweight tags (`v0.1.3`, `v0.2.0`, `v0.2.1`) wait. Each `v*` tag
+      pushed makes a GitHub release (the workflow).
+- [ ] The author tries 0.2.1 (installed on the shop PC): the Sources page with real players, the widget menus, the
+      drag of the floating widget, OBS itself, Spotify, a real live stream in the widget.
 - [ ] Later: like (Spotify), the taskbars of the other screens, spectrum of the player only (process loopback of
       Windows 11).

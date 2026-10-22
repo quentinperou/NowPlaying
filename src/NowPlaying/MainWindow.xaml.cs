@@ -398,17 +398,22 @@ public partial class MainWindow : Window
 
         page.Children.Add(Ui.Section(Strings.Get("SectionStyle")));
         // The shadow: on or off, and how dark (the slider is greyed while it is off).
-        var density = Ui.Slider(10, 100, style.ShadowOpacity, WidgetStyle.DefaultFloating().ShadowOpacity, "%",
+        var density = Ui.Slider(10, 100, style.ShadowOpacity, () => WidgetStyle.FloatingLook(style.ColorMode, style.Blur).ShadowOpacity, "%",
             v => { style.ShadowOpacity = v; App.ApplyStyles(); }, Strings.Get("FloatingShadow"), 160);
         density.IsEnabled = style.Shadow;
         var shadow = new StackPanel { Orientation = Orientation.Horizontal };
         shadow.Children.Add(density);
-        shadow.Children.Add(Spaced(Ui.Toggle(style.Shadow, on =>
+        var shadowToggle = Ui.Toggle(style.Shadow, on =>
         {
             style.Shadow = on;
             density.IsEnabled = on;
             App.ApplyStyles();
-        }, Strings.Get("FloatingShadow"))));
+        }, Strings.Get("FloatingShadow"));
+        shadow.Children.Add(Spaced(shadowToggle));
+        // How much of Windows' blur shows behind it (its strongest is Windows'; less mixes the sharp background in).
+        var blurStrength = Ui.Slider(0, 100, style.BlurStrength, () => WidgetStyle.FloatingLook(style.ColorMode, style.Blur).BlurStrength, "%",
+            v => { style.BlurStrength = v; App.ApplyStyles(); }, Strings.Get("FloatingBlur"));
+        var blurCard = Ui.Card("", Strings.Get("FloatingBlur"), Strings.Get("FloatingBlurHint"), blurStrength);
         var editor = new StyleEditor(style, WidgetStyle.DefaultFloating(), overlay: true,
             [
                 (Strings.Get("ElementCover"), () => style.ShowCover, v => style.ShowCover = v),
@@ -418,8 +423,19 @@ public partial class MainWindow : Window
                 (Strings.Get("ElementControls"), () => style.ShowControls, v => style.ShowControls = v),
             ], withVisualizer: false, glassOpacity: true,
             blur: (() => style.Blur, on => style.Blur = on),
-            afterColor: Ui.Card("", Strings.Get("FloatingShadow"), Strings.Get("FloatingShadowHint"), shadow));
+            defaultOpacity: () => WidgetStyle.FloatingLook(style.ColorMode, style.Blur).Opacity,
+            afterColor: new StackPanel { Children = { blurCard, Ui.Card("", Strings.Get("FloatingShadow"), Strings.Get("FloatingShadowHint"), shadow) } });
         editor.Changed += (_, _) => App.ApplyStyles();
+        // Each look starts from its own opacity and shadow (asked by the author): shown on their rows at once.
+        editor.LookChanged += (_, _) =>
+        {
+            style.ApplyFloatingLook();
+            editor.ShowOpacity();
+            Ui.ShowToggle(shadowToggle, style.Shadow);
+            density.IsEnabled = style.Shadow;
+            Ui.SetSlider(density, style.ShadowOpacity);
+            Ui.SetSlider(blurStrength, style.BlurStrength);
+        };
         page.Children.Add(editor);
 
         page.Children.Add(Ui.Section(Strings.Get("SectionBehavior")));
@@ -826,7 +842,9 @@ public partial class MainWindow : Window
             _floatingStage.Background = Checkerboard.Scene();
             var style = App.Settings.Floating;
             _floatingPreview.ApplyStyle(style, App.FloatingColors(style, media?.CoverColor),
-                style.Blur && style.ColorMode == ColorMode.Glass ? style.CornerRadius : null);
+                App.GlassLook(style) ? style.CornerRadius : null);
+            // The dusk of the picture around the preview: its colors at the edges of the glass.
+            _floatingPreview.ShowBehind(new Rgb(0x5F, 0x48, 0x85), new Rgb(0x35, 0x32, 0x6B), new Rgb(0x5F, 0x48, 0x85), new Rgb(0xB3, 0x68, 0x89));
             _floatingPreview.ShowMedia(media, idle: false);
         }
         if (_overlayPreview is not null && _overlayStage is not null)

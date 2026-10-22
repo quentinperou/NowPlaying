@@ -52,13 +52,24 @@ internal sealed class FloatingGlass : IDisposable
         _compositor = new Compositor();
         _compositor.As<ICompositorDesktopInterop>().CreateDesktopWindowTarget(hwnd, false, out IntPtr pointer);
         var target = Windows.UI.Composition.Desktop.DesktopWindowTarget.FromAbi(pointer);
-        var visual = _compositor.CreateSpriteVisual();
-        visual.RelativeSizeAdjustment = Vector2.One;
-        visual.Brush = _compositor.CreateHostBackdropBrush();
+        _visual = _compositor.CreateSpriteVisual();
+        _visual.RelativeSizeAdjustment = Vector2.One;
+        _visual.Brush = _compositor.CreateHostBackdropBrush();
         _shape = _compositor.CreateRoundedRectangleGeometry();
-        visual.Clip = _compositor.CreateGeometricClip(_shape);
-        target.Root = visual;
+        _visual.Clip = _compositor.CreateGeometricClip(_shape);
+        target.Root = _visual;
         _target = target;
+    }
+
+    private readonly SpriteVisual _visual;
+
+    /// <summary>
+    /// How much of the blur shows, 0 to 1: Windows sets its strength, less lets the sharp background show through it
+    /// (the "Blur" slider of the floating widget).
+    /// </summary>
+    public double Strength
+    {
+        set => _visual.Opacity = (float)Math.Clamp(value, 0, 1);
     }
 
     /// <summary>Just under the widget (<paramref name="widget"/>), on its rectangle and with its corners (screen pixels).</summary>

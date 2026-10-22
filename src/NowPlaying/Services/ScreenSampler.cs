@@ -5,14 +5,30 @@ using static NowPlaying.Services.NativeMethods;
 namespace NowPlaying.Services;
 
 /// <summary>
-/// Reads the mean color of a few screen pixels: the line of taskbar just above the widget, to choose a readable text
-/// on whatever the taskbar shows (dark, light, the accent color, a wallpaper through a see-through taskbar). Nothing is
-/// kept nor sent: a strip of a few hundred pixels, read when the widget moves or Windows' look changes.
+/// Reads the mean color of a few screen pixels: the line of taskbar just above the widget, or a thin band around the
+/// floating widget, to choose a readable text on whatever shows there (dark, light, the accent color, a wallpaper
+/// through a see-through taskbar, the page under the floating widget). Nothing is kept nor sent: strips of a few
+/// hundred pixels, read when a widget moves or Windows' look changes, and now and then while the floating widget plays.
 /// </summary>
 internal static class ScreenSampler
 {
     /// <summary>The mean color of the rectangle (screen pixels), null when it cannot be read.</summary>
-    public static Rgb? Mean(int x, int y, int width, int height)
+    public static Rgb? Mean(int x, int y, int width, int height) => Mean((x, y, width, height));
+
+    /// <summary>The mean color of several rectangles together (empty ones are skipped), null when none can be read.</summary>
+    public static Rgb? Mean(params (int X, int Y, int Width, int Height)[] areas)
+    {
+        long r = 0, g = 0, b = 0, count = 0;
+        foreach (var (x, y, width, height) in areas)
+        {
+            if (Sum(x, y, width, height) is not { } sum)
+                continue;
+            (r, g, b, count) = (r + sum.R, g + sum.G, b + sum.B, count + sum.Count);
+        }
+        return count == 0 ? null : new Rgb((byte)(r / count), (byte)(g / count), (byte)(b / count));
+    }
+
+    private static (long R, long G, long B, long Count)? Sum(int x, int y, int width, int height)
     {
         if (width <= 0 || height <= 0)
             return null;
@@ -45,7 +61,7 @@ internal static class ScreenSampler
                 g += (p >> 8) & 0xFF;
                 b += p & 0xFF;
             }
-            return new Rgb((byte)(r / pixels.Length), (byte)(g / pixels.Length), (byte)(b / pixels.Length));
+            return (r, g, b, pixels.Length);
         }
         finally
         {

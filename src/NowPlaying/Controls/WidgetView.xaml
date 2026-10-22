@@ -36,84 +36,121 @@
     </Style>
   </UserControl.Resources>
 
-  <Border x:Name="Root" CornerRadius="6" Padding="4,0,8,0">
-    <Grid>
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="Auto" />
-        <ColumnDefinition Width="*" />
-      </Grid.ColumnDefinitions>
-
-      <Border x:Name="CoverBox" Width="32" Height="32" CornerRadius="4" Margin="0,0,10,0" VerticalAlignment="Center">
-        <Border.Background>
-          <ImageBrush x:Name="CoverBrush" Stretch="UniformToFill" />
-        </Border.Background>
-      </Border>
-
-      <!-- At rest -->
-      <Grid x:Name="RestPanel" Grid.Column="1">
+  <Grid>
+    <Border x:Name="Root" CornerRadius="6" Padding="4,0,8,0">
+      <Grid>
         <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="*" />
           <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <StackPanel VerticalAlignment="Center">
-          <TextBlock x:Name="TitleText" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
-          <TextBlock x:Name="ArtistText" TextTrimming="CharacterEllipsis" />
-        </StackPanel>
-        <Border x:Name="BarsPanel" Grid.Column="1" Height="22" Margin="8,0,0,0" VerticalAlignment="Center" />
-      </Grid>
 
-      <!-- On hover, and with the wheel -->
-      <DockPanel x:Name="ControlPanel" Grid.Column="1" Visibility="Collapsed">
-        <Button x:Name="NextButton" DockPanel.Dock="Right" Style="{StaticResource WidgetButton}" Click="Next_Click"
-                AutomationProperties.Name="{local:Tr ButtonNext}">
-          <Path x:Name="NextGlyph" Style="{StaticResource Glyph}" Data="{StaticResource GlyphNext}" />
-        </Button>
-        <Button x:Name="PlayButton" DockPanel.Dock="Right" Style="{StaticResource WidgetButton}" Click="Play_Click"
-                AutomationProperties.Name="{local:Tr ButtonPlayPause}">
-          <Path x:Name="PlayGlyph" Style="{StaticResource Glyph}" Data="{StaticResource GlyphPause}" />
-        </Button>
-        <Button x:Name="PreviousButton" DockPanel.Dock="Right" Style="{StaticResource WidgetButton}" Click="Previous_Click"
-                AutomationProperties.Name="{local:Tr ButtonPrevious}">
-          <Path x:Name="PreviousGlyph" Style="{StaticResource Glyph}" Data="{StaticResource GlyphPrevious}" />
-        </Button>
-        <Grid Margin="0,0,6,0">
-          <Grid x:Name="SeekPanel">
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="Auto" />
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBlock x:Name="ElapsedText" FontSize="11" VerticalAlignment="Center" Margin="0,0,7,0" />
-            <Grid x:Name="SeekTrack" Grid.Column="1" Height="16" Background="Transparent" Cursor="Hand"
-                  MouseLeftButtonDown="Seek_MouseDown">
-              <Border x:Name="SeekBack" Height="4" CornerRadius="2" VerticalAlignment="Center" />
-              <Border x:Name="SeekFill" Height="4" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Center" />
-            </Grid>
-            <TextBlock x:Name="LengthText" Grid.Column="2" FontSize="11" VerticalAlignment="Center" Margin="7,0,0,0" />
-          </Grid>
-          <!-- A live stream (no length, the position goes on): no progress to show. -->
-          <StackPanel x:Name="LivePanel" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
-            <Ellipse Width="7" Height="7" Fill="#E5484D" VerticalAlignment="Center" Margin="0,0,6,0" />
-            <TextBlock x:Name="LiveText" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+        <Border x:Name="CoverBox" Width="32" Height="32" CornerRadius="4" Margin="0,0,10,0" VerticalAlignment="Center">
+          <Border.Background>
+            <ImageBrush x:Name="CoverBrush" Stretch="UniformToFill" />
+          </Border.Background>
+        </Border>
+
+        <!-- At rest -->
+        <Grid x:Name="RestPanel" Grid.Column="1">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+          </Grid.ColumnDefinitions>
+          <StackPanel VerticalAlignment="Center">
+            <TextBlock x:Name="TitleText" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+            <TextBlock x:Name="ArtistText" TextTrimming="CharacterEllipsis" />
           </StackPanel>
-          <Grid x:Name="VolumePanel" Visibility="Collapsed">
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="Auto" />
-              <ColumnDefinition Width="*" />
-              <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <TextBlock x:Name="VolumeIcon" FontFamily="{StaticResource IconFont}" FontSize="13" Text="&#xE767;"
-                       VerticalAlignment="Center" Margin="0,0,7,0" />
-            <Grid x:Name="VolumeTrack" Grid.Column="1" Height="16" Background="Transparent" Cursor="Hand"
-                  MouseLeftButtonDown="Volume_MouseDown">
-              <Border x:Name="VolumeBack" Height="4" CornerRadius="2" VerticalAlignment="Center" />
-              <Border x:Name="VolumeFill" Height="4" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Center" />
-            </Grid>
-            <TextBlock x:Name="VolumeText" Grid.Column="2" FontSize="11" VerticalAlignment="Center" Margin="7,0,0,0" MinWidth="30"
-                       TextAlignment="Right" />
-          </Grid>
+          <Border x:Name="BarsPanel" Grid.Column="1" Height="22" Margin="8,0,0,0" VerticalAlignment="Center" />
         </Grid>
-      </DockPanel>
+
+        <!-- On hover, and with the wheel -->
+        <DockPanel x:Name="ControlPanel" Grid.Column="1" Visibility="Collapsed">
+          <Button x:Name="NextButton" DockPanel.Dock="Right" Style="{StaticResource WidgetButton}" Click="Next_Click"
+                  AutomationProperties.Name="{local:Tr ButtonNext}">
+            <Path x:Name="NextGlyph" Style="{StaticResource Glyph}" Data="{StaticResource GlyphNext}" />
+          </Button>
+          <Button x:Name="PlayButton" DockPanel.Dock="Right" Style="{StaticResource WidgetButton}" Click="Play_Click"
+                  AutomationProperties.Name="{local:Tr ButtonPlayPause}">
+            <Path x:Name="PlayGlyph" Style="{StaticResource Glyph}" Data="{StaticResource GlyphPause}" />
+          </Button>
+          <Button x:Name="PreviousButton" DockPanel.Dock="Right" Style="{StaticResource WidgetButton}" Click="Previous_Click"
+                  AutomationProperties.Name="{local:Tr ButtonPrevious}">
+            <Path x:Name="PreviousGlyph" Style="{StaticResource Glyph}" Data="{StaticResource GlyphPrevious}" />
+          </Button>
+          <Grid Margin="0,0,6,0">
+            <Grid x:Name="SeekPanel">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <TextBlock x:Name="ElapsedText" FontSize="11" VerticalAlignment="Center" Margin="0,0,7,0" />
+              <Grid x:Name="SeekTrack" Grid.Column="1" Height="16" Background="Transparent" Cursor="Hand"
+                    MouseLeftButtonDown="Seek_MouseDown">
+                <Border x:Name="SeekBack" Height="4" CornerRadius="2" VerticalAlignment="Center" />
+                <Border x:Name="SeekFill" Height="4" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Center" />
+              </Grid>
+              <TextBlock x:Name="LengthText" Grid.Column="2" FontSize="11" VerticalAlignment="Center" Margin="7,0,0,0" />
+            </Grid>
+            <!-- A live stream (no length, the position goes on): no progress to show. -->
+            <StackPanel x:Name="LivePanel" Orientation="Horizontal" VerticalAlignment="Center" Visibility="Collapsed">
+              <Ellipse Width="7" Height="7" Fill="#E5484D" VerticalAlignment="Center" Margin="0,0,6,0" />
+              <TextBlock x:Name="LiveText" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+            </StackPanel>
+            <Grid x:Name="VolumePanel" Visibility="Collapsed">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+              </Grid.ColumnDefinitions>
+              <TextBlock x:Name="VolumeIcon" FontFamily="{StaticResource IconFont}" FontSize="13" Text="&#xE767;"
+                         VerticalAlignment="Center" Margin="0,0,7,0" />
+              <Grid x:Name="VolumeTrack" Grid.Column="1" Height="16" Background="Transparent" Cursor="Hand"
+                    MouseLeftButtonDown="Volume_MouseDown">
+                <Border x:Name="VolumeBack" Height="4" CornerRadius="2" VerticalAlignment="Center" />
+                <Border x:Name="VolumeFill" Height="4" CornerRadius="2" HorizontalAlignment="Left" VerticalAlignment="Center" />
+              </Grid>
+              <TextBlock x:Name="VolumeText" Grid.Column="2" FontSize="11" VerticalAlignment="Center" Margin="7,0,0,0" MinWidth="30"
+                         TextAlignment="Right" />
+            </Grid>
+          </Grid>
+        </DockPanel>
+      </Grid>
+    </Border>
+    <!-- The glass of the floating widget (see ApplyStyle): light caught on its edges, a glow inside, and on each side the
+         colors of what is behind it split as by a lens (ShowBehind: none over a white or grey page), over everything
+         and never in the way of the mouse. The blurred parts are kept as a picture: the bars moving under them do not
+         draw them again. -->
+    <Grid x:Name="Edges" IsHitTestVisible="False" Visibility="Collapsed">
+      <Grid>
+        <Grid.CacheMode>
+          <BitmapCache />
+        </Grid.CacheMode>
+        <Border x:Name="Glow" BorderThickness="5" BorderBrush="#33FFFFFF">
+          <Border.Effect>
+            <BlurEffect Radius="9" />
+          </Border.Effect>
+        </Border>
+        <Border x:Name="FringeSides" BorderThickness="2,0,2,0">
+          <Border.Effect>
+            <BlurEffect Radius="2.5" />
+          </Border.Effect>
+        </Border>
+        <Border x:Name="FringeEnds" BorderThickness="0,2,0,2">
+          <Border.Effect>
+            <BlurEffect Radius="2.5" />
+          </Border.Effect>
+        </Border>
+      </Grid>
+      <Border x:Name="EdgeRim" BorderThickness="1">
+        <Border.BorderBrush>
+          <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#F2FFFFFF" Offset="0" />
+            <GradientStop Color="#26FFFFFF" Offset="0.5" />
+            <GradientStop Color="#8CFFFFFF" Offset="1" />
+          </LinearGradientBrush>
+        </Border.BorderBrush>
+      </Border>
     </Grid>
-  </Border>
+  </Grid>
 </UserControl>

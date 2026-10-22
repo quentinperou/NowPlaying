@@ -347,6 +347,47 @@ public class SpectrumTests
     }
 
     [Fact]
+    public void QuietMusicStillMovesTheBars()
+    {
+        // 1 % of full scale (-40 dB): music played quietly, as on the shop PC (October 22, 2026).
+        var analyzer = new SpectrumAnalyzer(bars: 24, fftSize: 2048, sampleRate: 48000);
+        var quiet = new float[4096];
+        for (int i = 0; i < quiet.Length; i++)
+            quiet[i] = (float)(0.01 * Math.Sin(2 * Math.PI * 1000 * i / 48000));
+        analyzer.AddSamples(quiet);
+        var levels = new float[24];
+        for (int frame = 0; frame < 5; frame++)
+            analyzer.Compute(levels);
+        Assert.True(levels.Max() > 0.6f);
+    }
+
+    [Fact]
+    public void AfterALoudPassage_TheScaleComesBackDownSlowly()
+    {
+        var analyzer = new SpectrumAnalyzer(bars: 24, fftSize: 2048, sampleRate: 48000);
+        float[] Sine(double amplitude)
+        {
+            var s = new float[4096];
+            for (int i = 0; i < s.Length; i++)
+                s[i] = (float)(amplitude * Math.Sin(2 * Math.PI * 1000 * i / 48000));
+            return s;
+        }
+        var levels = new float[24];
+        analyzer.AddSamples(Sine(0.5));
+        for (int frame = 0; frame < 5; frame++)
+            analyzer.Compute(levels);
+        analyzer.AddSamples(Sine(0.01));
+        for (int frame = 0; frame < 20; frame++)
+            analyzer.Compute(levels);
+        float justAfter = levels.Max();
+        for (int frame = 0; frame < 600; frame++)
+            analyzer.Compute(levels);
+        // Low right after the loud passage, lifted again some seconds later.
+        Assert.True(justAfter < 0.5f);
+        Assert.True(levels.Max() > 0.6f);
+    }
+
+    [Fact]
     public void SilenceGivesFlatBars()
     {
         var analyzer = new SpectrumAnalyzer(bars: 10);
@@ -378,6 +419,54 @@ public class StyleTests
         Assert.Equal(WidgetPosition.Left, style.Position);
         Assert.Equal(ColorMode.Glass, style.ColorMode);
         Assert.Equal(IdleMode.Hide, style.Idle);
+    }
+
+    [Fact]
+    public void EachLookOfTheFloatingWidget_StartsFromItsOwnOpacityAndShadow()
+    {
+        var style = WidgetStyle.DefaultFloating();
+        Assert.Equal((25, true, 40, 100), (style.Opacity, style.Shadow, style.ShadowOpacity, style.BlurStrength)); // Glass, blurred
+        style.Opacity = 77;
+        style.Shadow = true;
+        style.Blur = false; // Transparent: a darker veil, no halo, sharp
+        style.ApplyFloatingLook();
+        Assert.Equal((55, false, 0), (style.Opacity, style.Shadow, style.BlurStrength));
+        Assert.False(style.Frosted);
+        style.ColorMode = ColorMode.Cover;
+        style.ApplyFloatingLook();
+        Assert.Equal((90, true, 40, 0), (style.Opacity, style.Shadow, style.ShadowOpacity, style.BlurStrength));
+        Assert.Equal(WidgetStyle.FloatingLook(ColorMode.Cover, false), WidgetStyle.FloatingLook(ColorMode.Custom, true));
+    }
+
+    [Fact]
+    public void ASettingsFileOf021_GetsTheBlurOfItsLook()
+    {
+        var glass = new WidgetStyle { ColorMode = ColorMode.Glass, Blur = true }.Normalized();
+        var clear = new WidgetStyle { ColorMode = ColorMode.Glass, Blur = false }.Normalized();
+        Assert.Equal((100, 0), (glass.BlurStrength, clear.BlurStrength));
+        Assert.Equal(35, new WidgetStyle { BlurStrength = 35 }.Normalized().BlurStrength);
+    }
+
+    [Fact]
+    public void TheTextFollowsTheBackgroundAsSeen()
+    {
+        bool DarkText(SurfaceColors colors) => !colors.Text.Color.IsLight;
+        var glass = WidgetStyle.DefaultFloating(); // a clear veil, 25 %
+        var white = new Rgb(250, 250, 250);
+        var black = new Rgb(12, 12, 12);
+        var overWhite = SurfaceColors.Resolve(glass, null, true, true, glassOpacity: true, backdrop: white);
+        Assert.True(DarkText(overWhite));
+        Assert.Equal(Rgb.White, overWhite.Background.Color); // a white veil over a light page
+        var overBlack = SurfaceColors.Resolve(glass, null, true, true, glassOpacity: true, backdrop: black);
+        Assert.False(DarkText(overBlack));
+        Assert.False(overBlack.Background.Color.IsLight);
+        // Unknown: white text on the dark veil, as before.
+        Assert.False(DarkText(SurfaceColors.Resolve(glass, null, true, true, glassOpacity: true)));
+
+        // A light custom color at 30 % over a dark page is seen dark: white text.
+        var custom = new WidgetStyle { ColorMode = ColorMode.Custom, CustomColor = "#F2F2F2", Opacity = 30 };
+        Assert.False(DarkText(SurfaceColors.Resolve(custom, null, true, true, backdrop: black)));
+        Assert.True(DarkText(SurfaceColors.Resolve(custom, null, true, true, backdrop: white)));
     }
 
     [Fact]

@@ -124,6 +124,7 @@ internal static class NativeMethods
 
     public const int MONITOR_DEFAULTTONULL = 0;
     public const int MONITOR_DEFAULTTOPRIMARY = 1;
+    public const int MONITOR_DEFAULTTONEAREST = 2;
 
     [DllImport("user32.dll")]
     public static extern IntPtr MonitorFromRect(ref RECT rect, int flags);

@@ -2,15 +2,23 @@ namespace NowPlaying.Core;
 
 /// <summary>
 /// The bars of the visualizer from the sound of the PC: the last samples, a Hann window, an FFT, bands spaced like
-/// the ear hears (log scale, 50 Hz to 16 kHz), levels in decibels from 0 to 1, rising fast and falling gently.
-/// Samples come from the audio thread, levels are read by the UI: every call is guarded.
+/// the ear hears (log scale, 50 Hz to 16 kHz), levels in decibels from 0 to 1, rising fast and falling gently. The
+/// scale follows the loudness of the last seconds (an automatic gain, up to 24 dB): music played quietly still moves
+/// the bars, silence and background noise do not. Samples come from the audio thread, levels are read by the UI:
+/// every call is guarded.
 /// </summary>
 public sealed class SpectrumAnalyzer
 {
     private const double MinFrequency = 50;
     private const double MaxFrequency = 16000;
-    private const double FloorDb = -62;
-    private const double CeilingDb = -12;
+    // The top of the scale: the loudest band of the last seconds, 3 dB above it, between these two (loud music is
+    // not squeezed further; quiet music is lifted 24 dB at most, more would show the noise of a silent PC).
+    private const double LoudestTopDb = -12;
+    private const double QuietestTopDb = -36;
+    private const double HeadroomDb = 3;
+    private const double RangeDb = 48;
+    // How fast the scale comes back down after a loud passage: about 1.5 dB a second at the pace of the display.
+    private const double ReleaseDbPerCompute = 0.06;
 
     private readonly int _size;
     private readonly float[] _ring;
@@ -18,6 +26,8 @@ public sealed class SpectrumAnalyzer
     private readonly double[] _re;
     private readonly double[] _im;
     private readonly float[] _smoothed;
+    private readonly double[] _bandDb;
+    private double _loudestDb = QuietestTopDb - HeadroomDb;
     private readonly object _lock = new();
     private int _written;
     private int _sampleRate;
@@ -36,6 +46,7 @@ public sealed class SpectrumAnalyzer
         _re = new double[fftSize];
         _im = new double[fftSize];
         _smoothed = new float[bars];
+        _bandDb = new double[bars];
     }
 
     public int Bars { get; }
@@ -67,6 +78,7 @@ public sealed class SpectrumAnalyzer
         {
             Array.Clear(_ring);
             Array.Clear(_smoothed);
+            _loudestDb = QuietestTopDb - HeadroomDb;
         }
     }
 
@@ -89,7 +101,8 @@ public sealed class SpectrumAnalyzer
             double binHz = (double)_sampleRate / _size;
             double top = Math.Min(MaxFrequency, _sampleRate / 2.0);
             double ratio = Math.Pow(top / MinFrequency, 1.0 / Bars);
-            for (int b = 0; b < Bars && b < levels.Length; b++)
+            double loudest = double.MinValue;
+            for (int b = 0; b < Bars; b++)
             {
                 double lo = MinFrequency * Math.Pow(ratio, b), hi = lo * ratio;
                 int first = Math.Max(1, (int)Math.Floor(lo / binHz));
@@ -98,8 +111,17 @@ public sealed class SpectrumAnalyzer
                 for (int k = first; k <= last; k++)
                     peak = Math.Max(peak, Math.Sqrt(_re[k] * _re[k] + _im[k] * _im[k]));
                 // Amplitude of a full-scale sine is about size / 4 with a Hann window.
-                double db = 20 * Math.Log10(peak / (_size / 4.0) + 1e-12);
-                float level = (float)Math.Clamp((db - FloorDb) / (CeilingDb - FloorDb), 0, 1);
+                _bandDb[b] = 20 * Math.Log10(peak / (_size / 4.0) + 1e-12);
+                loudest = Math.Max(loudest, _bandDb[b]);
+            }
+
+            // Up at once with a louder sound, down slowly after it.
+            _loudestDb = Math.Max(loudest, Math.Max(QuietestTopDb - HeadroomDb, _loudestDb - ReleaseDbPerCompute));
+            double scaleTop = Math.Clamp(_loudestDb + HeadroomDb, QuietestTopDb, LoudestTopDb);
+            double scaleBottom = scaleTop - RangeDb;
+            for (int b = 0; b < Bars && b < levels.Length; b++)
+            {
+                float level = (float)Math.Clamp((_bandDb[b] - scaleBottom) / RangeDb, 0, 1);
                 float previous = _smoothed[b];
                 _smoothed[b] = level > previous ? previous + (level - previous) * 0.7f : previous * 0.86f + level * 0.14f;
                 levels[b] = _smoothed[b];

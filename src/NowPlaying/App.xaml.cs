@@ -180,24 +180,49 @@ public partial class App : Application
             // Over any window: the colors of a dark surface (the glass is dark there), its veil as opaque as asked.
             Floating.OnTop = Settings.FloatingTopmost;
             Floating.Locked = Settings.FloatingLocked;
-            // "Glass" blurs what is behind, "Transparent" does not (both are the glass color mode).
-            bool frosted = floating.Blur && floating.ColorMode == ColorMode.Glass;
-            Floating.View.ApplyStyle(floating, FloatingColors(floating, shown?.CoverColor), frosted ? floating.CornerRadius : null);
-            Floating.SetLook(frosted, floating.CornerRadius, floating.Shadow ? floating.ShadowOpacity / 100.0 : 0);
+            // Over a blur as strong as asked (none: "Transparent"), in colors read on what is behind it.
+            s_floatingColors = FloatingColors(floating, shown?.CoverColor, Floating.Backdrop);
+            Floating.View.ApplyStyle(floating, s_floatingColors, GlassLook(floating) ? floating.CornerRadius : null);
+            ShowBehindFloating();
+            Floating.SetLook(floating.BlurStrength / 100.0, floating.CornerRadius, floating.Shadow ? floating.ShadowOpacity / 100.0 : 0);
             Floating.View.ShowMedia(shown, idle);
             Floating.SetWanted(Wanted(Settings.FloatingEnabled, floating));
+            // What is behind it is read again now and then only while something plays.
+            Floating.WatchBackdrop = media is { IsPlaying: true };
         }
     }
 
-    /// <summary>The colors of the floating widget (also those of its preview in the window).</summary>
-    internal static SurfaceColors FloatingColors(WidgetStyle style, Rgb? coverColor) =>
-        SurfaceColors.Resolve(style, coverColor, onDarkSurface: true, overlay: true, glassOpacity: true);
+    /// <summary>
+    /// The colors of the floating widget (also those of its preview in the window): the text dark or light after
+    /// <paramref name="backdrop"/>, what is behind it, when known.
+    /// </summary>
+    internal static SurfaceColors FloatingColors(WidgetStyle style, Rgb? coverColor, Rgb? backdrop = null) =>
+        SurfaceColors.Resolve(style, coverColor, onDarkSurface: true, overlay: true, glassOpacity: true, backdrop: backdrop);
+
+    private static SurfaceColors s_floatingColors;
+
+    private static void ShowBehindFloating()
+    {
+        var (left, top, right, bottom) = Floating!.BackdropSides;
+        Floating.View.ShowBehind(left, top, right, bottom);
+    }
+
+    /// <summary>The floating widget drawn as glass (its edges catch the light): Glass and Transparent, or any look over a blur.</summary>
+    internal static bool GlassLook(WidgetStyle style) => style.Frosted || style.ColorMode == ColorMode.Glass;
 
     private static void CreateFloating()
     {
         Floating = new FloatingWidget();
         Floating.View.Spectrum = Spectrum;
         Wire(Floating.View);
+        // Another page or window under it: the colors at its edges follow, the rest is drawn again only if its colors
+        // change (most often they do not).
+        Floating.BackdropChanged += (_, _) =>
+        {
+            ShowBehindFloating();
+            if (FloatingColors(Settings.Floating, (Media.Current ?? s_lastMedia)?.CoverColor, Floating.Backdrop) != s_floatingColors)
+                RefreshWidget();
+        };
         Floating.View.MenuRequested += (_, _) => PopupMenu.ShowFloating();
         Floating.PlaceChanged += (_, place) =>
         {

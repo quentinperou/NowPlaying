@@ -41,6 +41,7 @@ public partial class WidgetView : UserControl
     {
         InitializeComponent();
         BarsPanel.Child = _bars;
+        SizeChanged += (_, _) => ClipEdges();
         _frameTimer.Tick += (_, _) => PaintBars();
         _progressTimer.Tick += (_, _) => UpdateProgress();
         _volumeTimer.Tick += (_, _) =>
@@ -80,24 +81,23 @@ public partial class WidgetView : UserControl
     internal AudioSpectrum? Spectrum { get; set; }
 
     /// <param name="frostedRadius">
-    /// Over a blurred background (the floating widget, see <see cref="FloatingWidget.SetLook"/>): its corners, a light
-    /// rim brighter at the top and a sheen, as light catches a pane of glass.
+    /// Drawn as glass (the floating widget, see <see cref="FloatingWidget.SetLook"/>): its corners, the veil lighter at
+    /// the top, light caught on its edges, brighter at the top left, split into colors at its ends, and a glow inside, as a
+    /// thick pane of glass (the author chose this look among four, October 22, 2026: `.local/maquettes/liquid-glass.png`).
     /// </param>
     public void ApplyStyle(WidgetStyle style, SurfaceColors colors, double? frostedRadius = null)
     {
         bool frosted = frostedRadius is not null;
-        bool visualizerChanged = style.Visualizer != _style.Visualizer;
-        if (visualizerChanged)
-            StopFrames(); // the next start holds the spectrum, or not
         _style = style;
         _colors = colors;
 
         Width = style.Width;
         Root.CornerRadius = new CornerRadius(frostedRadius ?? style.CornerRadius);
         CoverBox.CornerRadius = new CornerRadius(Math.Min(4, Math.Max(2, style.CornerRadius)));
-        Root.Background = frosted ? Sheen(colors.Background) : Brush(colors.Background);
-        Root.BorderThickness = new Thickness(frosted ? 1 : 0);
-        Root.BorderBrush = frosted ? Rim : null;
+        Root.Background = frosted ? Gloss(colors.Background) : Brush(colors.Background);
+        Edges.Visibility = frosted ? Visibility.Visible : Visibility.Collapsed;
+        if (frostedRadius is { } radius)
+            ShapeEdges(radius);
         var text = Brush(colors.Text);
         var secondary = Brush(colors.SecondaryText);
         var track = Brush(colors.Track);
@@ -189,17 +189,13 @@ public partial class WidgetView : UserControl
         bool seen = IsVisible;
         bool rest = RestPanel.Visibility == Visibility.Visible;
         bool bars = seen && rest && _style.ShowVisualizer && _media is { IsPlaying: true } && !_idle;
+        // What the style asks now: it may be the window's own object, changed in place while the bars run (the
+        // floating widget, the previews), so the spectrum is taken or given back here, not only when the bars start.
+        HoldSpectrum(bars && _style.Visualizer == VisualizerMode.Spectrum && Spectrum is not null);
         if (bars && !_frameTimer.IsEnabled)
-        {
-            if (_style.Visualizer == VisualizerMode.Spectrum && Spectrum is not null && !_spectrumHeld)
-            {
-                Spectrum.Acquire();
-                _spectrumHeld = true;
-            }
             _frameTimer.Start();
-        }
         else if (!bars && _frameTimer.IsEnabled)
-            StopFrames();
+            _frameTimer.Stop();
         if (!bars)
             FlattenBars();
 
@@ -213,11 +209,18 @@ public partial class WidgetView : UserControl
     private void StopFrames()
     {
         _frameTimer.Stop();
-        if (_spectrumHeld)
-        {
+        HoldSpectrum(false);
+    }
+
+    private void HoldSpectrum(bool hold)
+    {
+        if (hold == _spectrumHeld)
+            return;
+        if (hold)
+            Spectrum!.Acquire();
+        else
             Spectrum?.Release();
-            _spectrumHeld = false;
-        }
+        _spectrumHeld = hold;
     }
 
     private void PaintBars()
@@ -312,17 +315,60 @@ public partial class WidgetView : UserControl
         return _greyCover;
     }
 
-    private static readonly Brush Rim = Frozen(new LinearGradientBrush(
-        [new GradientStop(Color.FromArgb(120, 255, 255, 255), 0), new GradientStop(Color.FromArgb(28, 255, 255, 255), 1)], 90));
-
-    // The background a little lighter at the top.
-    private static Brush Sheen(Argb background)
+    // The edges of the glass on the widget's corners, kept within them (the blurred glow and colors would spill out).
+    private void ShapeEdges(double radius)
     {
-        var c = background.Color;
-        byte Lighter(byte v) => (byte)(v + (255 - v) * 0.16);
-        var top = Color.FromArgb(background.A, Lighter(c.R), Lighter(c.G), Lighter(c.B));
-        var bottom = Color.FromArgb(background.A, c.R, c.G, c.B);
-        return Frozen(new LinearGradientBrush([new GradientStop(top, 0), new GradientStop(bottom, 0.7)], 90));
+        var corners = new CornerRadius(radius);
+        Glow.CornerRadius = FringeSides.CornerRadius = FringeEnds.CornerRadius = EdgeRim.CornerRadius = corners;
+        _edgeRadius = radius;
+        ClipEdges();
+    }
+
+    private double _edgeRadius;
+
+    private void ClipEdges() =>
+        Edges.Clip = new RectangleGeometry(new Rect(0, 0, Math.Max(0, ActualWidth), Math.Max(0, ActualHeight)), _edgeRadius, _edgeRadius);
+
+    /// <summary>
+    /// The colors split at the edges of the glass, after what is behind each side (the author, October 22, 2026: "selon
+    /// ce qu'il y a derrière"): a colorful background tints its side, a white, grey or black one leaves none, as a lens
+    /// only shows colors where there are some. Null: not read.
+    /// </summary>
+    public void ShowBehind(Rgb? left, Rgb? top, Rgb? right, Rgb? bottom)
+    {
+        FringeSides.BorderBrush = Fringe(left, right, new Point(0, 0.5), new Point(1, 0.5));
+        FringeEnds.BorderBrush = Fringe(top, bottom, new Point(0.5, 0), new Point(0.5, 1));
+    }
+
+    // From one side to the other: only the two edges of the border are drawn, each in its own color.
+    private static Brush Fringe(Rgb? from, Rgb? to, Point start, Point end) =>
+        Frozen(new LinearGradientBrush(Split(from), Split(to), start, end));
+
+    // The color of a background, vivid, as opaque as it is colorful (its chroma: none for white, grey or black).
+    private static Color Split(Rgb? behind)
+    {
+        if (behind is not { } c)
+            return Colors.Transparent;
+        double chroma = (Math.Max(c.R, Math.Max(c.G, c.B)) - Math.Min(c.R, Math.Min(c.G, c.B))) / 255.0;
+        var (hue, _, _) = c.ToHsl();
+        var vivid = Rgb.FromHsl(hue, 1, 0.58);
+        return Color.FromArgb((byte)Math.Round(Math.Clamp(chroma * 1.6, 0, 1) * 0.6 * 255), vivid.R, vivid.G, vivid.B);
+    }
+
+    // The veil with light on its top, as glass catches it: white over it from 30 % at the top to none past the middle,
+    // a little again at the bottom.
+    private static Brush Gloss(Argb veil) => Frozen(new LinearGradientBrush(
+        [new GradientStop(Lit(veil, 0.30), 0), new GradientStop(Lit(veil, 0.06), 0.42), new GradientStop(Lit(veil, 0), 0.6),
+         new GradientStop(Lit(veil, 0.08), 1)], 90));
+
+    // White, <paramref name="white"/> opaque, over a see-through color.
+    private static Color Lit(Argb under, double white)
+    {
+        double a = under.A / 255.0, alpha = white + a * (1 - white);
+        if (alpha <= 0)
+            return Colors.Transparent;
+        byte Mix(byte c) => (byte)Math.Round((255 * white + c * a * (1 - white)) / alpha);
+        return Color.FromArgb((byte)Math.Round(alpha * 255), Mix(under.Color.R), Mix(under.Color.G), Mix(under.Color.B));
     }
 
     private static Brush Frozen(Brush brush)

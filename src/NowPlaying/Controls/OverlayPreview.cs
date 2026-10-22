@@ -69,8 +69,6 @@ internal sealed class OverlayPreview : Border
 
     public void Show(OverlayLayout layout, OverlayStyle style, MediaSnapshot? media)
     {
-        if (layout != _layout || style.Visualizer != _style.Visualizer)
-            StopTimer();
         _layout = layout;
         _style = style;
         _media = media;
@@ -160,27 +158,30 @@ internal sealed class OverlayPreview : Border
 
     private void UpdateTimer()
     {
+        // What the style asks now: it is the window's own object, changed in place while the preview runs.
+        HoldSpectrum(Animated && _layout == OverlayLayout.Bar && _style.ShowVisualizer && _style.Visualizer == VisualizerMode.Spectrum
+            && Spectrum is not null);
         if (Animated && !_timer.IsEnabled)
-        {
-            if (_layout == OverlayLayout.Bar && _style.ShowVisualizer && _style.Visualizer == VisualizerMode.Spectrum && Spectrum is not null)
-            {
-                Spectrum.Acquire();
-                _spectrumHeld = true;
-            }
             _timer.Start();
-        }
         else if (!Animated)
-            StopTimer();
+            _timer.Stop();
     }
 
     private void StopTimer()
     {
         _timer.Stop();
-        if (_spectrumHeld)
-        {
+        HoldSpectrum(false);
+    }
+
+    private void HoldSpectrum(bool hold)
+    {
+        if (hold == _spectrumHeld)
+            return;
+        if (hold)
+            Spectrum!.Acquire();
+        else
             Spectrum?.Release();
-            _spectrumHeld = false;
-        }
+        _spectrumHeld = hold;
     }
 
     private void Tick()

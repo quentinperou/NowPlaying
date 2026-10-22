@@ -85,8 +85,14 @@
   <data name="ErrorUpdateRateLimited" xml:space="preserve">
     <value>GitHub limite le nombre de vérifications, réessayez dans un moment.</value>
   </data>
+  <data name="FloatingBlur" xml:space="preserve">
+    <value>Flou</value>
+  </data>
+  <data name="FloatingBlurHint" xml:space="preserve">
+    <value>0 % : net ; 100 % : le flou de Windows, le plus fort possible</value>
+  </data>
   <data name="FloatingColorHint" xml:space="preserve">
-    <value>« Verre » floute ce qui est derrière le widget (Windows fixe la force du flou), « Transparent » non ; l&apos;opacité règle le voile</value>
+    <value>« Verre » floute ce qui est derrière, « Transparent » non ; chacun part de ses propres opacité, flou et ombre</value>
   </data>
   <data name="FloatingLocked" xml:space="preserve">
     <value>Verrouiller la position</value>
