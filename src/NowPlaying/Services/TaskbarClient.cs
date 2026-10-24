@@ -129,17 +129,19 @@ internal sealed class TaskbarClient
             if (_state is not { } state)
                 return;
             GetWindowRect(widget.Tray, out var bar);
+            void Open(string page)
+            {
+                if (_appProcessId != 0)
+                    AllowSetForegroundWindow(_appProcessId);
+                _channel.Send("open", page);
+            }
             PopupMenu.ShowSources(state.Sources,
                 id => _channel.Send("pin", id),
-                () =>
-                {
-                    if (_appProcessId != 0)
-                        AllowSetForegroundWindow(_appProcessId);
-                    _channel.Send("open");
-                },
+                () => Open(""),
                 () => _channel.Send("quit"),
                 aboveY: bar.Top,
-                copy: TrackText.Format(state.Media?.Title, state.Media?.Artist));
+                copy: TrackText.Format(state.Media?.Title, state.Media?.Artist),
+                history: () => Open("history"));
         };
 
         widget.BackdropChanged += (_, _) => Apply();

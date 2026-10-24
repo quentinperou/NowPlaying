@@ -40,6 +40,13 @@ plays: alternate the builds, several times, before concluding. The floating widg
 
 ## Project status (October 21, 2026)
 
+**Version 0.3.1** (October 24, 2026; installed on the shop PC over 0.3.0 at his request, silently, settings kept;
+committed with tag `v0.3.1`, not pushed): two history entries showed the Chrome
+logo: Chrome gives Windows its logo first, the page's picture a moment later, and the history kept the first one; the
+last cover given for a track now stays (`PlayHistory.Heard`, `HistoryStore` reads a cover again at each new cover
+revision). "History…" added to the menus of both widgets and of the notification icon (the taskbar widget asks the
+app with `open history`). Checked: the tray menu shows it, choosing it by UI Automation opens the History page.
+
 **Version 0.3.0** (October 24, 2026; installed on the shop PC over 0.2.4 at his request, silently, settings kept;
 committed with tag `v0.3.0`, not pushed): four features he chose among ideas (mock-up `.local/maquettes/idees-0-3.png`, approved), all optional
 (the section of the text file renamed by him "Informations dans un fichier texte"; he declined a click on a history
@@ -406,9 +413,9 @@ English (default) and French, following the Windows display language or chosen i
 ## To do
 
 - [ ] The author pushes from home: the repository has no remote yet (the GitHub repository `quentinperou/NowPlaying`
-      is to be created), seven commits and seven lightweight tags (`v0.1.3`, `v0.2.0` to `v0.2.4`, `v0.3.0`) wait.
-      Each `v*` tag pushed makes a GitHub release (the workflow).
-- [ ] The author tries 0.3.0 (installed on the shop PC): the Sources page with real players, the widget menus (and
+      is to be created), eight commits and eight lightweight tags (`v0.1.3`, `v0.2.0` to `v0.2.4`, `v0.3.0`, `v0.3.1`)
+      wait. Each `v*` tag pushed makes a GitHub release (the workflow).
+- [ ] The author tries 0.3.1 (installed on the shop PC): the Sources page with real players, the widget menus (and
       "Copy title – artist"), the click on the cover, the drag of the floating widget, OBS itself (the overlay on each
       new track, the text file), Spotify, a real live stream in the widget.
 - [ ] With the window open on the Floating widget page, the Debug build used about 32 % of one core: look into it.

@@ -30,21 +30,24 @@ public sealed class PlayHistory
 
     public List<HistoryEntry> Entries { get; set; } = [];
 
-    /// <summary>Whether <see cref="Heard"/> would change something (a new track, or the cover of the last one found).</summary>
-    public bool IsNew(string title, string artist, string player, bool hasCover) =>
-        !string.IsNullOrWhiteSpace(title)
-        && (Entries.Count == 0 || !Entries[0].IsSameTrack(title, artist, player) || (Entries[0].Cover is null && hasCover));
+    /// <summary>Whether this is another track than the last one heard (a title, not the same as the last entry).</summary>
+    public bool IsNewTrack(string title, string artist, string player) =>
+        !string.IsNullOrWhiteSpace(title) && (Entries.Count == 0 || !Entries[0].IsSameTrack(title, artist, player));
 
-    /// <summary>A track playing now. True when the history changed: a new entry, or the cover of the last one found.</summary>
+    /// <summary>
+    /// A track playing now. True when the history changed: a new entry, or another cover for the last one. The cover
+    /// often comes after the title, and a browser first gives its own logo, then the page's picture: the last one
+    /// given stays.
+    /// </summary>
     public bool Heard(string title, string artist, string player, string? cover, DateTimeOffset now)
     {
         if (string.IsNullOrWhiteSpace(title))
             return false;
         if (Entries.Count > 0 && Entries[0].IsSameTrack(title, artist, player))
         {
-            if (Entries[0].Cover is not null || cover is null)
+            if (cover is null || cover == Entries[0].Cover)
                 return false;
-            Entries[0].Cover = cover; // the cover often comes a moment after the title
+            Entries[0].Cover = cover;
             return true;
         }
         Entries.Insert(0, new HistoryEntry { Played = now, Title = title, Artist = artist, Player = player, Cover = cover });

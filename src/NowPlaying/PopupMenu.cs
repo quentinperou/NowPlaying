@@ -26,6 +26,7 @@ internal static class PopupMenu
     {
         var menu = new ContextMenu { MinWidth = 240 };
         menu.Items.Add(Item(Strings.Get("MenuOpen"), "", () => App.OpenMainWindow()));
+        menu.Items.Add(Item(Strings.Get("MenuHistory"), "", () => App.OpenMainWindow(MainPage.History)));
         menu.Items.Add(Item(Strings.Get("MenuShowWidget"), App.Settings.WidgetEnabled ? Check : "",
             () => App.SetWidgetEnabled(!App.Settings.WidgetEnabled)));
         menu.Items.Add(Item(Strings.Get("MenuShowFloating"), App.Settings.FloatingEnabled ? Check : "",
@@ -38,7 +39,7 @@ internal static class PopupMenu
     /// <summary>The menu of the floating widget (right click): also above the windows or not, locked, hidden.</summary>
     public static void ShowFloating() =>
         ShowSources(App.Media.Sources, App.Media.Pin, () => App.OpenMainWindow(MainPage.Floating), App.Quit,
-            copy: TrackText.Format(App.ShownMedia?.Title, App.ShownMedia?.Artist), options: () =>
+            copy: TrackText.Format(App.ShownMedia?.Title, App.ShownMedia?.Artist), history: () => App.OpenMainWindow(MainPage.History), options: () =>
         [
             Item(Strings.Get("FloatingTopmost"), App.Settings.FloatingTopmost ? Check : "",
                 () => App.SetFloatingTopmost(!App.Settings.FloatingTopmost)),
@@ -53,10 +54,11 @@ internal static class PopupMenu
     /// taskbar): only it may bring its menu to the front, and a menu not in front stays open when the user clicks
     /// elsewhere. <paramref name="aboveY"/>: the top of the taskbar, in screen pixels; the menu then opens above it,
     /// never over it (the taskbar may come over any window). <paramref name="options"/>: items of that widget.
-    /// <paramref name="copy"/>: the track shown as "title – artist", offered to copy (asked by the author, October 24, 2026).
+    /// <paramref name="copy"/>: the track shown as "title – artist", offered to copy; <paramref name="history"/>: opens the
+    /// History page (both asked by the author, October 24, 2026).
     /// </summary>
     public static void ShowSources(IReadOnlyList<MediaSource> sources, Action<string> pin, Action customize, Action quit, int? aboveY = null,
-        Func<IEnumerable<MenuItem>>? options = null, string? copy = null) => Show(() =>
+        Func<IEnumerable<MenuItem>>? options = null, string? copy = null, Action? history = null) => Show(() =>
     {
         var menu = new ContextMenu { MinWidth = 280 };
         menu.Items.Add(new MenuItem { Header = Strings.Get("MenuSource"), IsEnabled = false });
@@ -67,11 +69,13 @@ internal static class PopupMenu
             menu.Items.Add(item);
         }
         menu.Items.Add(new Separator());
+        // The track shown, and the tracks heard.
         if (!string.IsNullOrEmpty(copy))
-        {
             menu.Items.Add(Item(Strings.Get("MenuCopyTrack"), "", () => Copy(copy)));
+        if (history is not null)
+            menu.Items.Add(Item(Strings.Get("MenuHistory"), "", history));
+        if (!string.IsNullOrEmpty(copy) || history is not null)
             menu.Items.Add(new Separator());
-        }
         if (options is not null)
         {
             foreach (var option in options())

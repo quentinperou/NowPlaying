@@ -196,6 +196,9 @@
   <data name="MenuHideFloating" xml:space="preserve">
     <value>Masquer le widget flottant</value>
   </data>
+  <data name="MenuHistory" xml:space="preserve">
+    <value>Historique…</value>
+  </data>
   <data name="MenuOpen" xml:space="preserve">
     <value>Ouvrir NowPlaying</value>
   </data>

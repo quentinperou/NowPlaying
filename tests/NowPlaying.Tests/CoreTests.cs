@@ -440,14 +440,17 @@ public class PlayHistoryTests
     }
 
     [Fact]
-    public void TheCover_ComingAfterTheTitle_JoinsItsEntry()
+    public void TheCover_ComingAfterTheTitle_JoinsItsEntry_AndTheLastOneStays()
     {
         var history = new PlayHistory();
-        history.Heard("Neon Harbor", "Lumen Drift", "Spotify", null, Now);
-        Assert.True(history.IsNew("Neon Harbor", "Lumen Drift", "Spotify", hasCover: true));
-        Assert.True(history.Heard("Neon Harbor", "Lumen Drift", "Spotify", "abc", Now));
-        Assert.Equal("abc", history.Entries[0].Cover);
-        Assert.False(history.IsNew("Neon Harbor", "Lumen Drift", "Spotify", hasCover: true));
+        history.Heard("lofi hip hop radio", "Lofi Girl", "Google Chrome", null, Now);
+        Assert.False(history.IsNewTrack("lofi hip hop radio", "Lofi Girl", "Google Chrome"));
+        // Chrome gives its logo first, the page's picture a moment later (seen on the shop PC, October 24, 2026).
+        Assert.True(history.Heard("lofi hip hop radio", "Lofi Girl", "Google Chrome", "chrome-logo", Now));
+        Assert.True(history.Heard("lofi hip hop radio", "Lofi Girl", "Google Chrome", "youtube-picture", Now));
+        Assert.False(history.Heard("lofi hip hop radio", "Lofi Girl", "Google Chrome", "youtube-picture", Now));
+        Assert.False(history.Heard("lofi hip hop radio", "Lofi Girl", "Google Chrome", null, Now));
+        Assert.Equal("youtube-picture", history.Entries[0].Cover);
         Assert.Single(history.Entries);
     }
 

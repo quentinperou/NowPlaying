@@ -196,6 +196,9 @@
   <data name="MenuHideFloating" xml:space="preserve">
     <value>Hide the floating widget</value>
   </data>
+  <data name="MenuHistory" xml:space="preserve">
+    <value>History…</value>
+  </data>
   <data name="MenuOpen" xml:space="preserve">
     <value>Open NowPlaying</value>
   </data>

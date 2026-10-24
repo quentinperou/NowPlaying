@@ -69,8 +69,11 @@ internal sealed class TaskbarHost : IDisposable
     /// <summary>A player chosen in the menu of the widget (its id).</summary>
     public event Action<string>? PinRequested;
 
-    /// <summary>"Customize" in the menu of the widget (the widget process allowed the app to come to the front).</summary>
-    public event EventHandler? OpenRequested;
+    /// <summary>
+    /// "Customize" ("") or "History…" ("history") in the menu of the widget (the widget process allowed the app to come
+    /// to the front): the page of the window to open.
+    /// </summary>
+    public event Action<string>? OpenRequested;
     public event EventHandler? QuitRequested;
 
     /// <summary>What the widget shows. <paramref name="enabled"/>: the widget process runs (the widget is on).</summary>
@@ -198,7 +201,7 @@ internal sealed class TaskbarHost : IDisposable
                 PinRequested?.Invoke(payload);
                 break;
             case "open":
-                OpenRequested?.Invoke(this, EventArgs.Empty);
+                OpenRequested?.Invoke(payload);
                 break;
             case "quit":
                 QuitRequested?.Invoke(this, EventArgs.Empty);

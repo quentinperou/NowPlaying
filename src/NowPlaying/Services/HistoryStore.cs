@@ -23,6 +23,7 @@ internal sealed class HistoryStore
     public static readonly string CoversFolder = Path.Combine(Folder, "covers");
 
     private readonly DispatcherTimer _saveTimer = new() { Interval = TimeSpan.FromSeconds(5) };
+    private (string Id, int Revision) _coverSeen;
 
     private HistoryStore(PlayHistory history)
     {
@@ -52,11 +53,17 @@ internal sealed class HistoryStore
         return new HistoryStore(history);
     }
 
-    /// <summary>A track playing now: a new entry if it is another track (its cover kept as a small picture).</summary>
+    /// <summary>
+    /// A track playing now: a new entry if it is another track, its cover kept as a small picture, and kept again when
+    /// the player gives another one (a browser gives its logo first, the page's picture a moment later).
+    /// </summary>
     public void Heard(MediaSnapshot media)
     {
-        if (!History.IsNew(media.Title, media.Artist, media.AppName, media.Cover is not null))
+        bool newTrack = History.IsNewTrack(media.Title, media.Artist, media.AppName);
+        bool newCover = media.Cover is not null && (media.Id, media.CoverRevision) != _coverSeen;
+        if (!newTrack && !newCover)
             return;
+        _coverSeen = (media.Id, media.CoverRevision);
         string? cover = media.Cover is { } picture ? SaveCover(picture) : null;
         if (!History.Heard(media.Title, media.Artist, media.AppName, cover, DateTimeOffset.Now))
             return;

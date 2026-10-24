@@ -111,7 +111,7 @@ public partial class App : Application
         // Its menu is shown by the widget process (it got the click, so its menu may take the focus, and closes when
         // the user clicks elsewhere): the choices come back here.
         Taskbar.PinRequested += id => Media.Pin(id);
-        Taskbar.OpenRequested += (_, _) => OpenMainWindow(MainPage.Widget);
+        Taskbar.OpenRequested += page => OpenMainWindow(page == "history" ? MainPage.History : MainPage.Widget);
         Taskbar.QuitRequested += (_, _) => Quit();
 
         Media.Changed += (_, _) => MediaChanged();
