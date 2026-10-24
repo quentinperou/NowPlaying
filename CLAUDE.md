@@ -47,7 +47,7 @@ release with the installer.
 
 ## Project status (October 24, 2026)
 
-**Microsoft Store version, in progress** (October 24, 2026, evening, home PC; **not committed**, asked by him: steps
+**Microsoft Store version, in progress** (October 24, 2026, evening, home PC; commit `7aea3e1`, pushed; asked by him: steps
 1 and 2 of the plan in `.local/claude/memory/project-store-plan.md`): he made his Partner Center account and reserved
 **"NowPlaying by QuentinPerou"** (Store ID `9N7FSJ3M6KGC`). The same exe runs from a full MSIX package
 (`store/AppxManifest.xml`, the identity of Partner Center; `scripts/build-store.ps1`: self-contained, makepri,
@@ -61,9 +61,14 @@ x.y.z.0. The installer now also removes the Run value at uninstall. Checked on h
 there): registered from `dist/store/layout` (Developer Mode), started by its app id, both processes with the
 package's identity (`tasklist /apps`), the startup task on, turned off and on again from the General page (UI
 Automation, its state read in the registry), the Updates page, the local server, 0.2 % of one core and 14 + 25 MB
-at rest; the data went to the package's own folder and left with it. Not checked: the start at sign-in, the offer
-to uninstall the GitHub version (no GitHub version on that PC), the widget in the board from the Store package, the
-Windows App Certification Kit (needs administrator rights).
+at rest; the data went to the package's own folder and left with it. Then the **Windows App Certification Kit**
+(run by him as administrator on the registered package, `appcert.exe test -packagefullname …`): first two failures,
+"Application count" (the Store takes one `<Application>` per package: the widget provider is now an extension of
+the app's) and "Blocked executables", plus a DPI warning on `NowPlaying.Widgets.exe` (it has an `app.manifest`
+now, merged by the Windows App SDK with its classes); the second run **PASS**, only "Blocked executables" left, an
+optional test for Windows 10 S that the Store does not count (strings of .NET, our own Explorer and links). The
+widget provider of the package starts by COM activation (its log: "Provider ready"). Not checked: the start at
+sign-in, the offer to uninstall the GitHub version (no GitHub version on that PC), the widget added to the board.
 
 **On GitHub** (October 24, 2026, evening, from his home PC): the repository `quentinperou/NowPlaying` is public (he
 published `main` from VS Code: Claude Code's auto mode refused `gh repo create`); the nine tags are pushed, and one
@@ -466,14 +471,17 @@ English (default) and French, following the Windows display language or chosen i
   hidden "NowPlaying" window, picture the popup's rectangle, post it again to close the menu.
 - GitHub creates no push event for more than three tags pushed at once: no workflow, no release. Push a version's
   tag alone.
+- The Store takes one `<Application>` per package (certification kit, "Application count"): a second exe that
+  Windows starts (the widget provider) is an extension of the one application, its own `Executable`.
+- The certification kit cannot install an unsigned MSIX: register `dist\store\layout` first, then
+  `appcert.exe test -packagefullname <full name> -reportoutputpath <xml>` in an administrator prompt.
 - `makepri createconfig` puts each scale in a PRI file of its own (`<packaging>`, meant for a bundle): in a single
   MSIX the scale-200 logos would be lost; `build-store.ps1` removes that section. Run makepri from PowerShell: Git
   Bash turns its `/cf` options into paths.
 
 ## To do
 
-- [ ] Store version: commit it (with the CLAUDE.md of the GitHub push); the Windows App Certification Kit on the
-      MSIX (as administrator); the listing in Partner Center (English and French, screenshots, privacy policy, age
+- [ ] Store version: the listing in Partner Center (English and French, screenshots, privacy policy, age
       rating, the `runFullTrust` sentence), then the first submission by hand; later, maybe, the upload from GitHub
       (plan, step 4). To check: the offer to uninstall the GitHub version (on the shop PC), the start at sign-in, the
       widget in the board.

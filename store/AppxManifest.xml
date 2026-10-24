@@ -8,9 +8,9 @@
   Version: written by the build script from Directory.Build.props (0.3.2 gives 0.3.2.0, the Store wants the last
   number at 0).
 
-  Two applications, as the GitHub version has: NowPlaying (the Start menu, its startup task) and the provider of the
-  widget of the Windows Widgets board, which Windows starts as a COM server. Its class id is not the one of the GitHub
-  version's sparse package, so that both versions can be installed on one PC.
+  One application (the Store takes no package with several): NowPlaying, with its startup task and the provider of the
+  widget of the Windows Widgets board, NowPlaying.Widgets.exe, which Windows starts as a COM server. Its class id is
+  not the one of the GitHub version's sparse package, so that both versions can be installed on one PC.
 
   runFullTrust: a desktop app (the media sessions of every app, its widget placed over the taskbar).
 -->
@@ -63,19 +63,7 @@
         <desktop:Extension Category="windows.startupTask" Executable="NowPlaying.exe" EntryPoint="Windows.FullTrustApplication">
           <desktop:StartupTask TaskId="NowPlayingStartup" Enabled="true" DisplayName="NowPlaying" />
         </desktop:Extension>
-      </Extensions>
-    </Application>
 
-    <Application Id="Widgets" Executable="NowPlaying.Widgets.exe" EntryPoint="Windows.FullTrustApplication">
-      <uap:VisualElements
-        AppListEntry="none"
-        DisplayName="NowPlaying"
-        Description="What's playing, in the Windows Widgets board"
-        BackgroundColor="transparent"
-        Square150x150Logo="Assets\Square150x150Logo.png"
-        Square44x44Logo="Assets\Square44x44Logo.png" />
-
-      <Extensions>
         <!-- The provider: NowPlaying.Widgets.exe, started by Windows when a NowPlaying widget is on the board. -->
         <com:Extension Category="windows.comServer">
           <com:ComServer>

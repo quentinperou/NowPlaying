@@ -11,6 +11,7 @@
     <AssemblyName>NowPlaying.Widgets</AssemblyName>
     <RootNamespace>NowPlaying.Widgets</RootNamespace>
     <ApplicationIcon>..\NowPlaying\Assets\NowPlaying.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
     <Product>NowPlaying</Product>
     <!-- Windows App SDK without its runtime installer: the widget part (2.4 MB) ships with the app. -->
     <WindowsPackageType>None</WindowsPackageType>
