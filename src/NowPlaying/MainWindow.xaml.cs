@@ -43,11 +43,11 @@ public partial class MainWindow : Window
         foreach (var p in Enum.GetValues<MainPage>())
             Nav.Items.Add(NavItem(p));
         ShowPage(page);
-        App.Media.Changed += MediaChanged;
+        App.ShownChanged += MediaChanged;
         App.StyleChanged += StyleChanged;
         Closed += (_, _) =>
         {
-            App.Media.Changed -= MediaChanged;
+            App.ShownChanged -= MediaChanged;
             App.StyleChanged -= StyleChanged;
         };
         MediaChanged(null, EventArgs.Empty);
@@ -796,6 +796,7 @@ public partial class MainWindow : Window
         var media = App.ShownMedia;
         NowLine.Text = media is null ? Strings.Get("NothingPlaying") : $"{media.Title} · {media.Artist}";
         RefreshPreviews();
+        ShowPlayers(); // their state lines: drawn again only when they change
     }
 
     private void StyleChanged(object? sender, EventArgs e)

@@ -41,6 +41,9 @@ public partial class App : Application
     /// <summary>A style changed (the window's previews follow).</summary>
     public static event EventHandler? StyleChanged;
 
+    /// <summary>What the widgets show changed (<see cref="ShownMedia"/>: a track, or the end of the few seconds kept).</summary>
+    public static event EventHandler? ShownChanged;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -186,6 +189,7 @@ public partial class App : Application
         Overlay.UpdateStyle(OverlayLayout.Bar, Settings.OverlayBar, media?.CoverColor);
         Overlay.UpdateStyle(OverlayLayout.Card, Settings.OverlayCard, media?.CoverColor);
         UpdateOverlayLevels();
+        ShownChanged?.Invoke(null, EventArgs.Empty);
     }
 
     /// <summary>
@@ -350,8 +354,14 @@ public partial class App : Application
     /// <summary>The rules of the Sources page changed: the player shown and the menus follow, saved a moment later.</summary>
     internal static void ApplySources()
     {
+        // A player hidden by the user goes at once: no few seconds kept, and its track not kept greyed either.
+        s_graceTimer?.Stop();
+        s_graceMedia = null;
+        s_graceUsed = true;
+        if (s_lastMedia is { } last && Settings.Players.Any(p => p.Hidden && string.Equals(p.AppId, last.AppId, StringComparison.OrdinalIgnoreCase)))
+            s_lastMedia = null;
         Media.SetPolicy(Settings.SourcePolicy());
-        RefreshWidget();
+        MediaChanged();
         SaveSoon();
     }
 

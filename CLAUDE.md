@@ -40,6 +40,14 @@ plays: alternate the builds, several times, before concluding. The floating widg
 
 ## Project status (October 21, 2026)
 
+**Version 0.2.4** (October 24, 2026; installed on the shop PC over 0.2.3 at his request, silently, settings kept;
+committed with tag `v0.2.4`, not pushed): he hid Chrome on the Sources page and
+still saw its track. The 4 s kept after a session ends applied to a player he hides himself too: a player hidden now
+goes at once, and its track is not kept greyed either (`App.ApplySources`). Found with it: the window was not told when
+those 4 s ended (it follows `App.ShownChanged` now, not `Media.Changed`), and the rows of the Sources page did not
+follow what plays (`ShowPlayers` on each change, drawn again only when a line changes). Checked by UI Automation:
+Chrome hidden, the widget gone within 0.5 s, the top line and the row updated; shown again, back at once.
+
 **Version 0.2.3** (October 24, 2026; installed on the shop PC over 0.2.2 at his request, silently, settings kept;
 committed with tag `v0.2.3`, not pushed): on a YouTube playlist in Chrome the widget
 vanished and came back at each new video (Chrome ends its media session with the video and opens another one): what
@@ -375,9 +383,9 @@ English (default) and French, following the Windows display language or chosen i
 ## To do
 
 - [ ] The author pushes from home: the repository has no remote yet (the GitHub repository `quentinperou/NowPlaying`
-      is to be created), five commits and five lightweight tags (`v0.1.3`, `v0.2.0` to `v0.2.3`) wait. Each `v*` tag
+      is to be created), six commits and six lightweight tags (`v0.1.3`, `v0.2.0` to `v0.2.4`) wait. Each `v*` tag
       pushed makes a GitHub release (the workflow).
-- [ ] The author tries 0.2.3 (installed on the shop PC): the Sources page with real players, the widget menus, the
+- [ ] The author tries 0.2.4 (installed on the shop PC): the Sources page with real players, the widget menus, the
       drag of the floating widget, OBS itself, Spotify, a real live stream in the widget.
 - [ ] With the window open on the Floating widget page, the Debug build used about 32 % of one core: look into it.
 - [ ] Later: like (Spotify), the taskbars of the other screens, spectrum of the player only (process loopback of
