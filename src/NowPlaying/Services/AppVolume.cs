@@ -50,6 +50,41 @@ internal static class AppVolume
         }
     }
 
+    /// <summary>
+    /// The process that plays the player's sound (its audio session on the default output, the one sounding first):
+    /// for a browser, the process of its own that it plays through. Null when it has none now.
+    /// </summary>
+    public static int? SoundProcess(string appId)
+    {
+        if (string.IsNullOrEmpty(appId))
+            return null;
+        try
+        {
+            using var enumerator = new MMDeviceEnumerator();
+            using var device = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            var manager = device.AudioSessionManager;
+            manager.RefreshSessions();
+            var sessions = manager.Sessions;
+            int? found = null;
+            for (int i = 0; i < sessions.Count; i++)
+            {
+                using var session = sessions[i];
+                int pid = (int)session.GetProcessID;
+                if (pid == 0 || !BelongsTo(appId, pid))
+                    continue;
+                if (session.State == NAudio.CoreAudioApi.Interfaces.AudioSessionState.AudioSessionStateActive)
+                    return pid;
+                found ??= pid;
+            }
+            return found;
+        }
+        catch (Exception ex) when (ex is COMException or InvalidOperationException or ArgumentException)
+        {
+            Debug.WriteLine($"Sound process: {ex.Message}");
+            return null;
+        }
+    }
+
     /// <summary>Whether the process <paramref name="pid"/> is the player <paramref name="appId"/> (also used to find its window).</summary>
     internal static bool BelongsTo(string appId, int pid)
     {

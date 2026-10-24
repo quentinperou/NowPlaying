@@ -30,7 +30,7 @@
   browser (YouTube, Deezer, SoundCloud…), Media Player, Apple Music…
 - **On hover**: previous, play / pause, next, and the progress bar (click to seek; “LIVE” for a live stream).
 - **Mouse wheel**: the volume of the app that plays, not the volume of the whole PC.
-- A **visualizer**: the real spectrum of the sound, or a calm animation.
+- A **visualizer**: the real spectrum of the player's sound (not your calls nor your games), or a calm animation.
 - The text stays readable: its color follows what is really behind the widget (a light or dark taskbar, a colored or
   see-through one).
 - On the main screen or on every screen; a click on the cover can bring the player to the front.

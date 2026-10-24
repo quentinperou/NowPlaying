@@ -31,7 +31,7 @@
   un navigateur (YouTube, Deezer, SoundCloud…), Lecteur multimédia, Apple Music…
 - **Au survol** : précédent, lecture / pause, suivant, et la barre de progression (un clic pour avancer ; « EN DIRECT » pour un direct).
 - **Molette** : le volume de l'application qui joue, pas celui de tout le PC.
-- Un **visualiseur** : le vrai spectre du son, ou une animation calme.
+- Un **visualiseur** : le vrai spectre du son du lecteur (pas de vos appels ni de vos jeux), ou une animation calme.
 - Le texte reste lisible : sa couleur suit ce qu'il y a vraiment derrière le widget (barre des tâches claire ou
   sombre, colorée ou transparente).
 - Sur l'écran principal ou sur tous les écrans ; un clic sur la pochette peut ramener le lecteur au premier plan.

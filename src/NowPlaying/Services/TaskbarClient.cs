@@ -239,6 +239,8 @@ internal sealed class TaskbarClient
         var style = state.Style.Normalized();
         var media = state.Media?.ToSnapshot(state.Media.CoverKey == _cover.Key ? _cover.Cover : null);
         SyncScreens(style.AllScreens);
+        // The bars listen to the player shown (one capture for every screen).
+        _widget.View.Spectrum?.SetPlayer(state.Media?.AppId);
         foreach (var widget in Widgets.ToList())
         {
             widget.WidgetStyle = style;

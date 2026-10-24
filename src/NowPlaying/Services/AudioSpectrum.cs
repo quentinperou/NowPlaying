@@ -10,9 +10,11 @@ using NowPlaying.Core;
 namespace NowPlaying.Services;
 
 /// <summary>
-/// The sound of the PC for the "real spectrum" visualizer: a WASAPI loopback capture of the default output, read by
-/// <see cref="SpectrumAnalyzer"/>. It runs only while someone looks (the widget at rest with its bars, an overlay
-/// page with a visualizer) and something plays: <see cref="Acquire"/> / <see cref="Release"/> count them.
+/// The sound for the "real spectrum" visualizer, read by <see cref="SpectrumAnalyzer"/>: the sound of the player shown
+/// only (<see cref="SetPlayer"/>, <see cref="ProcessLoopback"/>; asked by the author on October 24, 2026: not Discord, a
+/// game or a notification), else the whole default output (WASAPI loopback: the player has made no sound yet, or a
+/// Windows too old). It runs only while someone looks (the widget at rest with its bars, an overlay page with a
+/// visualizer) and something plays: <see cref="Acquire"/> / <see cref="Release"/> count them.
 /// </summary>
 internal sealed class AudioSpectrum : IDisposable
 {
@@ -22,6 +24,12 @@ internal sealed class AudioSpectrum : IDisposable
     private readonly float[] _levels = new float[Bars];
     private readonly Dispatcher _ui;
     private WasapiLoopbackCapture? _capture;
+    private ProcessLoopback? _process;
+    private string? _player;
+    // This Windows has no process loopback (before Windows 10 2004, build 20348 for the include-tree mode): the whole
+    // output only.
+    private bool _processUnavailable = Environment.OSVersion.Version.Build < 20348;
+    private long _lastLookForPlayer;
     private MMDeviceEnumerator? _devices;
     private DeviceWatcher? _watcher;
     private int _users;
@@ -39,6 +47,25 @@ internal sealed class AudioSpectrum : IDisposable
     {
         if (_users > 0 && --_users == 0)
             Stop();
+    }
+
+    /// <summary>
+    /// The player shown (its media app id): its sound only from now on. Called at each change of what plays (cheap
+    /// when nothing changes); while the whole output is heard for want of the player's sound, its sound is looked for
+    /// again every few seconds.
+    /// </summary>
+    public void SetPlayer(string? appId)
+    {
+        if (string.IsNullOrEmpty(appId))
+            return;
+        if (appId != _player)
+        {
+            _player = appId;
+            Restart();
+        }
+        else if (_users > 0 && _process is null && !_processUnavailable
+            && Stopwatch.GetElapsedTime(_lastLookForPlayer) > TimeSpan.FromSeconds(3))
+            Restart();
     }
 
     /// <summary>The bars now (0 to 1), smoothed with the previous call: call it at the pace of the display.</summary>
@@ -59,6 +86,28 @@ internal sealed class AudioSpectrum : IDisposable
 
     private void Start()
     {
+        // The player's sound when its process is known.
+        _lastLookForPlayer = Stopwatch.GetTimestamp();
+        if (!_processUnavailable && _player is not null && AppVolume.SoundProcess(_player) is int pid)
+        {
+            _analyzer.SampleRate = ProcessLoopback.SampleRate;
+            _analyzer.Clear();
+            _process = ProcessLoopback.Start(pid);
+            _process.DataAvailable += (buffer, count) =>
+                Feed(buffer.AsSpan(0, count), ProcessLoopback.Channels, ProcessLoopback.BitsPerSample / 8, isFloat: false);
+            var started = _process;
+            _process.Stopped += error => _ui.BeginInvoke(async () =>
+            {
+                if (_process != started)
+                    return;
+                // Not available on this Windows: the whole output from now on. The player gone: look again soon.
+                if (error is EntryPointNotFoundException or DllNotFoundException)
+                    _processUnavailable = true;
+                await Task.Delay(1000);
+                Restart();
+            });
+            return;
+        }
         try
         {
             _capture = new WasapiLoopbackCapture();
@@ -98,6 +147,12 @@ internal sealed class AudioSpectrum : IDisposable
 
     private void DisposeCapture()
     {
+        if (_process is not null)
+        {
+            var process = _process;
+            _process = null;
+            process.Dispose();
+        }
         if (_capture is null)
             return;
         var capture = _capture;
@@ -126,24 +181,28 @@ internal sealed class AudioSpectrum : IDisposable
         });
     }
 
-    // On the capture thread: the frames, mixed down to mono.
+    // On the capture thread: the frames of the whole output.
     private void OnData(object? sender, WaveInEventArgs e)
     {
         if (sender is not WasapiLoopbackCapture capture || e.BytesRecorded == 0)
             return;
         var format = capture.WaveFormat;
-        int channels = Math.Max(1, format.Channels);
         // The shared-mode mix format of Windows is 32-bit float (plain or "extensible").
         bool isFloat = format.Encoding == WaveFormatEncoding.IeeeFloat
             || (format.Encoding == WaveFormatEncoding.Extensible && format.BitsPerSample == 32);
-        int bytesPerSample = format.BitsPerSample / 8;
-        if (bytesPerSample == 0)
+        Feed(e.Buffer.AsSpan(0, e.BytesRecorded), format.Channels, format.BitsPerSample / 8, isFloat);
+    }
+
+    // On a capture thread: the frames, mixed down to mono, to the analyzer.
+    private void Feed(ReadOnlySpan<byte> data, int channelCount, int bytesPerSample, bool isFloat)
+    {
+        int channels = Math.Max(1, channelCount);
+        if (bytesPerSample == 0 || data.Length == 0)
             return;
-        int frames = e.BytesRecorded / (bytesPerSample * channels);
+        int frames = data.Length / (bytesPerSample * channels);
         float[] mono = ArrayPool<float>.Shared.Rent(frames);
         try
         {
-            var data = e.Buffer.AsSpan(0, e.BytesRecorded);
             for (int f = 0; f < frames; f++)
             {
                 float sum = 0;

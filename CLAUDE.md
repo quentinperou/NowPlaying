@@ -33,12 +33,26 @@ Since 0.2 the taskbar widget runs in a second process, pinged once a second by t
 YouTube video playing in Chrome, floating widget off, 30 s windows alternated: 0.1.3 1.7 % and 6.2 % of one core,
 0.2.0 3.7 % and 5.4 % (app + widget process; about 40 + 65 MB of working set). Such measures vary a lot with what
 plays: alternate the builds, several times, before concluding. The floating widget adds its own bars and spectrum
-(about 3 % more while playing). Not measured yet with nothing playing.
+(about 3 % more while playing). Measured on October 24 with 0.3.1 (Release, installed), each page 10 s
+(`.local\measure-pages.ps1`): nothing playing, window closed 0.0 %; playing (the silent fake player and a YouTube
+stream), floating widget on, window closed 0.9 % (+ 0.6 % for the widget process), open 1.4–6.4 % depending on the
+page (Floating widget page 2.0 %). The Debug build, same case: 1.4–6.9 %. A measure right after UI Automation walked
+the whole window once read 32 %: let the window rest before measuring.
 
 **Git**: commits only in the author's name (repository-local identity `QuentinPerou`, his GitHub noreply address),
 **no `Co-Authored-By` line**. **Never push** without his explicit OK: he pushes from his own PC.
 
 ## Project status (October 21, 2026)
+
+**Version 0.3.2** (October 24, 2026; installed on the shop PC over 0.3.1 at his request, silently, settings kept;
+committed with tag `v0.3.2`, not pushed): the **real spectrum listens to the player
+shown only** (he agreed: "ça me paraît cohérent"), not Discord, a game or a notification: Windows' process loopback
+(`ProcessLoopback`, COM declarations of our own, NAudio has none) on the player's sound process (`AppVolume.SoundProcess`:
+its audio session; for a browser, the process it plays through, so all its tabs), followed when the player changes
+(`AudioSpectrum.SetPlayer`, from the app and the widget process); the whole output as before when the player has made
+no sound yet (looked for again every 3 s) or on a Windows older than build 20348. Checked: the silent fake player
+shown while Chrome played, the bars sent to OBS stayed at 0.00; Chrome shown, up to 0.92. Also checked: the "32 %" of
+October 22 does not reproduce (see Performance). `.local\cs\process-loopback.cs` listens to one process alone.
 
 **Version 0.3.1** (October 24, 2026; installed on the shop PC over 0.3.0 at his request, silently, settings kept;
 committed with tag `v0.3.1`, not pushed): two history entries showed the Chrome
@@ -104,7 +118,7 @@ band around it just outside its shadow (`FloatingWidget.ReadBackdrop`: when it s
 while something plays), the color or veil of the style counted over it (`SurfaceColors.Resolve(…, backdrop)`).
 Checked: pictures of the real widget over his white web page at 0, 33, 66 and 100 % (dark text, the blur mixed in);
 CPU with the window closed 3.0–4.7 % of one core (Debug, both widgets, spectrum), as before. With the window open on
-the Floating widget page the Debug build used about 32 %: not looked into yet.
+the Floating widget page the Debug build used about 32 % once; not reproduced on October 24 (see Performance).
 Then he found the glass far from Apple's "Liquid Glass" (lens distortion, chromatic aberration on the edges). Told
 him: Windows only hands apps a blurred copy of what is behind, so no lens of the sharp background without capturing
 the screen all the time (costly, and the widget would vanish from screenshots and OBS). Four drawn variants shown
@@ -335,9 +349,12 @@ one would show the desktop behind it) and the widget on a Windows 11 taskbar. Ma
   `TrayNotifyWnd` (still a real window with its rectangle on Windows 11).
 - **Volume of the app**: Core Audio sessions of the default output (NAudio), matched to the player by
   `AppIdentity.Matches` (exe name, Store package family, Firefox's hash). 2 % a notch.
-- **Spectrum**: WASAPI loopback of the default output (NAudio), only while bars are shown and something plays
-  (`AudioSpectrum.Acquire/Release`); follows a change of output device; readers of one frame share one computation;
-  silence lets the bars fall.
+- **Spectrum**: the sound of the player shown only, by Windows' process loopback (`ProcessLoopback`: the virtual
+  device `VAD\Process_Loopback` activated for the player's sound process and its children, 16-bit stereo 44.1 kHz);
+  else (no sound from the player yet, Windows before build 20348) a WASAPI loopback of the default output (NAudio).
+  Only while bars are shown and something plays (`AudioSpectrum.Acquire/Release`); follows the player
+  (`SetPlayer`) and a change of output device; readers of one frame share one computation; silence lets the bars
+  fall; an automatic gain (`SpectrumAnalyzer`).
 - **Overlay**: `HttpListener` on `http://localhost:port/` (no admin rights, this PC only), the page gets events
   (Server-Sent Events: `style`, `state`, `levels`); it reconnects by itself when the app restarts. Colors are worked
   out by the app (`SurfaceColors`), the page only applies CSS variables. The "Animation" bars are drawn by the page.
@@ -413,11 +430,9 @@ English (default) and French, following the Windows display language or chosen i
 ## To do
 
 - [ ] The author pushes from home: the repository has no remote yet (the GitHub repository `quentinperou/NowPlaying`
-      is to be created), eight commits and eight lightweight tags (`v0.1.3`, `v0.2.0` to `v0.2.4`, `v0.3.0`, `v0.3.1`)
-      wait. Each `v*` tag pushed makes a GitHub release (the workflow).
-- [ ] The author tries 0.3.1 (installed on the shop PC): the Sources page with real players, the widget menus (and
+      is to be created), nine commits and nine lightweight tags (`v0.1.3`, `v0.2.0` to `v0.2.4`, `v0.3.0` to
+      `v0.3.2`) wait. Each `v*` tag pushed makes a GitHub release (the workflow).
+- [ ] The author tries 0.3.2 (installed on the shop PC): the Sources page with real players, the widget menus (and
       "Copy title – artist"), the click on the cover, the drag of the floating widget, OBS itself (the overlay on each
       new track, the text file), Spotify, a real live stream in the widget.
-- [ ] With the window open on the Floating widget page, the Debug build used about 32 % of one core: look into it.
-- [ ] Later: like (Spotify), spectrum of the player only (process loopback of
-      Windows 11).
+- [ ] Later: like (Spotify).

@@ -188,6 +188,8 @@ public partial class App : Application
         // The players seen, listed on the Sources page (also while they are closed).
         if (Settings.RememberPlayers(Media.Players.Select(p => (p.AppId, p.AppName))))
             SaveSoon();
+        // The real spectrum listens to the player shown.
+        Spectrum.SetPlayer(Media.Current?.AppId);
         // What plays, heard (the History page) and written for OBS (the text file).
         if (Settings.HistoryEnabled && Media.Current is { IsPlaying: true } playing)
             History.Heard(playing);
