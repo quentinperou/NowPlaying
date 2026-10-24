@@ -28,6 +28,9 @@ public partial class App : Application
 
     internal static AudioSpectrum Spectrum { get; private set; } = null!;
 
+    /// <summary>The tracks heard (the History page).</summary>
+    internal static HistoryStore History { get; private set; } = null!;
+
     internal static OverlayServer Overlay { get; private set; } = null!;
 
     internal static TrayHost Tray { get; private set; } = null!;
@@ -79,6 +82,7 @@ public partial class App : Application
 
         Media = new MediaSessions(Dispatcher);
         Spectrum = new AudioSpectrum(Dispatcher);
+        History = HistoryStore.Load();
         Overlay = new OverlayServer();
         Overlay.ClientsChanged += (_, _) => Dispatcher.BeginInvoke(UpdateOverlayLevels);
         Overlay.CommandReceived += command => Dispatcher.BeginInvoke(() => _ = command switch
@@ -133,6 +137,7 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         s_saveTimer?.Stop();
+        History?.Save();
         Taskbar?.Dispose();
         Overlay?.Dispose();
         Spectrum?.Dispose();
@@ -183,6 +188,10 @@ public partial class App : Application
         // The players seen, listed on the Sources page (also while they are closed).
         if (Settings.RememberPlayers(Media.Players.Select(p => (p.AppId, p.AppName))))
             SaveSoon();
+        // What plays, heard (the History page) and written for OBS (the text file).
+        if (Settings.HistoryEnabled && Media.Current is { IsPlaying: true } playing)
+            History.Heard(playing);
+        TrackFile.Update(media, Settings.TextFileEnabled, Settings.TextFileFormat);
         RefreshWidget();
         Overlay.UpdateState(media, keepWhenIdle: false);
         // The "Cover" color follows the track.
@@ -319,6 +328,11 @@ public partial class App : Application
         view.NextRequested += (_, _) => _ = Media.NextAsync();
         view.PreviousRequested += (_, _) => _ = Media.PreviousAsync();
         view.SeekRequested += (_, fraction) => _ = Media.SeekAsync(fraction);
+        view.CoverClicked += (_, _) =>
+        {
+            if (Media.Current is { } media)
+                PlayerWindow.BringToFront(media.AppId);
+        };
         view.VolumeWheel += (_, notches) =>
         {
             if (Media.Current is not { } media)
@@ -363,6 +377,14 @@ public partial class App : Application
         Media.SetPolicy(Settings.SourcePolicy());
         MediaChanged();
         SaveSoon();
+    }
+
+    /// <summary>The text file for OBS on or off, or another content: written (or emptied) at once.</summary>
+    internal static void SetTextFile(bool enabled, TrackTextFormat format)
+    {
+        (Settings.TextFileEnabled, Settings.TextFileFormat) = (enabled, format);
+        Settings.Save();
+        TrackFile.Update(ShownMedia, enabled, format);
     }
 
     internal static void SetWidgetEnabled(bool enabled)

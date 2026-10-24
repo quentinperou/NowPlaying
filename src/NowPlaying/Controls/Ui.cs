@@ -76,6 +76,19 @@ internal static class Ui
         return card;
     }
 
+    /// <summary>
+    /// Rows that only matter when another setting is on: still shown (as the author asked for the settings that are
+    /// off), but greyed, the Fluent theme alone leaving a disabled slider in its colors.
+    /// </summary>
+    public static void Enable(bool enabled, params UIElement[] rows)
+    {
+        foreach (var row in rows)
+        {
+            row.IsEnabled = enabled;
+            row.Opacity = enabled ? 1 : 0.5;
+        }
+    }
+
     /// <summary>A card under another one, indented to its title (a detail of the row above).</summary>
     public static Border SubCard(string title, UIElement control)
     {

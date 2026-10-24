@@ -41,6 +41,15 @@ public enum IdleMode
     KeepLast,
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<OverlayAppearance>))]
+public enum OverlayAppearance
+{
+    /// <summary>On the scene as long as a track is known.</summary>
+    Always,
+    /// <summary>A few seconds at each new track, then faded out (asked by the author, October 24, 2026).</summary>
+    OnNewTrack,
+}
+
 [JsonConverter(typeof(JsonStringEnumConverter<OverlayLayout>))]
 public enum OverlayLayout
 {
@@ -130,6 +139,12 @@ public sealed class WidgetStyle : SurfaceStyle
     /// </summary>
     public int BlurStrength { get; set; } = -1;
 
+    /// <summary>A click on the cover brings the player to the front (asked by the author, October 24, 2026; off by default).</summary>
+    public bool CoverOpensPlayer { get; set; }
+
+    /// <summary>The taskbar widget only: on the taskbar of every screen, not only the main one.</summary>
+    public bool AllScreens { get; set; }
+
     /// <summary>The floating widget only: drawn over a blurred background.</summary>
     [JsonIgnore]
     public bool Frosted => BlurStrength > 0;
@@ -183,6 +198,18 @@ public sealed class WidgetStyle : SurfaceStyle
 public sealed class OverlayStyle : SurfaceStyle
 {
     public bool ShowProgress { get; set; } = true;
+
+    /// <summary>Shown all the time, or only a few seconds at each new track.</summary>
+    public OverlayAppearance Appearance { get; set; } = OverlayAppearance.Always;
+
+    /// <summary>How long it stays at each new track, in seconds (<see cref="OverlayAppearance.OnNewTrack"/>).</summary>
+    public int AppearSeconds { get; set; } = DefaultAppearSeconds;
+
+    /// <summary>Shown again when the playback starts again after a pause, too.</summary>
+    public bool AppearOnResume { get; set; }
+
+    public const int DefaultAppearSeconds = 8;
+    public static readonly (int Min, int Max) AppearSecondsRange = (3, 30);
     public bool ShowTimes { get; set; } = true;
 
     public override (int Min, int Max) WidthRange => (320, 800);
@@ -206,6 +233,8 @@ public sealed class OverlayStyle : SurfaceStyle
     public OverlayStyle Normalized(OverlayLayout layout)
     {
         NormalizeCommon(Default(layout));
+        if (!Enum.IsDefined(Appearance)) Appearance = OverlayAppearance.Always;
+        AppearSeconds = AppearSeconds == 0 ? DefaultAppearSeconds : Math.Clamp(AppearSeconds, AppearSecondsRange.Min, AppearSecondsRange.Max);
         return this;
     }
 

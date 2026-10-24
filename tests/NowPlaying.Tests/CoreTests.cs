@@ -409,6 +409,62 @@ public class SpectrumTests
     }
 }
 
+public class TrackTextTests
+{
+    [Fact]
+    public void Format_WritesTheChosenLine()
+    {
+        Assert.Equal("Neon Harbor – Lumen Drift", TrackText.Format("Neon Harbor", "Lumen Drift"));
+        Assert.Equal("Lumen Drift – Neon Harbor", TrackText.Format("Neon Harbor", "Lumen Drift", TrackTextFormat.ArtistTitle));
+        Assert.Equal("Neon Harbor", TrackText.Format("Neon Harbor", "Lumen Drift", TrackTextFormat.Title));
+        // A page without artist: the title alone, no dangling dash.
+        Assert.Equal("24/7 radio", TrackText.Format(" 24/7 radio ", ""));
+        Assert.Equal("", TrackText.Format(null, null));
+    }
+}
+
+public class PlayHistoryTests
+{
+    private static readonly DateTimeOffset Now = new(2026, 10, 24, 12, 0, 0, TimeSpan.FromHours(2));
+
+    [Fact]
+    public void ATrackGoingOn_IsOneEntry_AnotherOneIsANewEntry()
+    {
+        var history = new PlayHistory();
+        Assert.True(history.Heard("Towering Heights", "squeeda", "Google Chrome", null, Now));
+        Assert.False(history.Heard("Towering Heights", "squeeda", "Google Chrome", null, Now.AddMinutes(1))); // after a pause
+        Assert.True(history.Heard("A Second Worth", "slowburn", "Google Chrome", null, Now.AddMinutes(3)));
+        Assert.True(history.Heard("Towering Heights", "squeeda", "Google Chrome", null, Now.AddMinutes(6))); // played again
+        Assert.Equal(["Towering Heights", "A Second Worth", "Towering Heights"], history.Entries.Select(e => e.Title));
+        Assert.False(history.Heard("", "nobody", "Firefox", null, Now));
+    }
+
+    [Fact]
+    public void TheCover_ComingAfterTheTitle_JoinsItsEntry()
+    {
+        var history = new PlayHistory();
+        history.Heard("Neon Harbor", "Lumen Drift", "Spotify", null, Now);
+        Assert.True(history.IsNew("Neon Harbor", "Lumen Drift", "Spotify", hasCover: true));
+        Assert.True(history.Heard("Neon Harbor", "Lumen Drift", "Spotify", "abc", Now));
+        Assert.Equal("abc", history.Entries[0].Cover);
+        Assert.False(history.IsNew("Neon Harbor", "Lumen Drift", "Spotify", hasCover: true));
+        Assert.Single(history.Entries);
+    }
+
+    [Fact]
+    public void OldEntries_AndTooMany_AreForgotten()
+    {
+        var history = new PlayHistory();
+        history.Heard("Old", "", "Spotify", null, Now.AddDays(-31));
+        history.Heard("Recent", "", "Spotify", null, Now);
+        Assert.Equal(["Recent"], history.Entries.Select(e => e.Title));
+        for (int i = 0; i < PlayHistory.MaxEntries + 5; i++)
+            history.Heard($"Track {i}", "", "Spotify", null, Now);
+        Assert.Equal(PlayHistory.MaxEntries, history.Entries.Count);
+        Assert.Equal($"Track {PlayHistory.MaxEntries + 4}", history.Entries[0].Title);
+    }
+}
+
 public class StyleTests
 {
     [Fact]
@@ -436,6 +492,15 @@ public class StyleTests
         style.ApplyFloatingLook();
         Assert.Equal((90, true, 40, 0), (style.Opacity, style.Shadow, style.ShadowOpacity, style.BlurStrength));
         Assert.Equal(WidgetStyle.FloatingLook(ColorMode.Cover, false), WidgetStyle.FloatingLook(ColorMode.Custom, true));
+    }
+
+    [Fact]
+    public void TheOverlayAppearance_StaysWithinItsRange()
+    {
+        var bar = OverlayStyle.DefaultBar();
+        Assert.Equal((OverlayAppearance.Always, 8, false), (bar.Appearance, bar.AppearSeconds, bar.AppearOnResume));
+        Assert.Equal(30, new OverlayStyle { AppearSeconds = 500 }.Normalized(OverlayLayout.Bar).AppearSeconds);
+        Assert.Equal(8, new OverlayStyle { AppearSeconds = 0 }.Normalized(OverlayLayout.Card).AppearSeconds);
     }
 
     [Fact]

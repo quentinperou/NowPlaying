@@ -22,6 +22,12 @@
   <data name="AboutVersion" xml:space="preserve">
     <value>Version {0} · MIT license</value>
   </data>
+  <data name="AppearanceAlways" xml:space="preserve">
+    <value>Always</value>
+  </data>
+  <data name="AppearanceOnNewTrack" xml:space="preserve">
+    <value>On each new track</value>
+  </data>
   <data name="Apply" xml:space="preserve">
     <value>Apply</value>
   </data>
@@ -54,6 +60,12 @@
   </data>
   <data name="Copy" xml:space="preserve">
     <value>Copy</value>
+  </data>
+  <data name="CoverOpensPlayer" xml:space="preserve">
+    <value>Click on the cover</value>
+  </data>
+  <data name="CoverOpensPlayerHint" xml:space="preserve">
+    <value>Brings the player to the front (Chrome, Spotify…)</value>
   </data>
   <data name="ElementArtist" xml:space="preserve">
     <value>Artist</value>
@@ -130,6 +142,30 @@
   <data name="FloatingTopmostHint" xml:space="preserve">
     <value>Off, it stays under the windows you use, like a widget on the desktop</value>
   </data>
+  <data name="HistoryClear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="HistoryCopy" xml:space="preserve">
+    <value>Copy {0}</value>
+  </data>
+  <data name="HistoryEmpty" xml:space="preserve">
+    <value>Nothing heard yet</value>
+  </data>
+  <data name="HistoryEmptyHint" xml:space="preserve">
+    <value>The tracks played show here, day by day</value>
+  </data>
+  <data name="HistoryKeep" xml:space="preserve">
+    <value>Keep the history</value>
+  </data>
+  <data name="HistoryKeepHint" xml:space="preserve">
+    <value>On this PC only, the last {0} days</value>
+  </data>
+  <data name="HistoryToday" xml:space="preserve">
+    <value>Today</value>
+  </data>
+  <data name="HistoryYesterday" xml:space="preserve">
+    <value>Yesterday</value>
+  </data>
   <data name="IdleHide" xml:space="preserve">
     <value>Hide the widget</value>
   </data>
@@ -150,6 +186,9 @@
   </data>
   <data name="Live" xml:space="preserve">
     <value>LIVE</value>
+  </data>
+  <data name="MenuCopyTrack" xml:space="preserve">
+    <value>Copy title – artist</value>
   </data>
   <data name="MenuCustomize" xml:space="preserve">
     <value>Customize…</value>
@@ -196,6 +235,18 @@
   <data name="OverlayAddressHint" xml:space="preserve">
     <value>Browser Source · width {0}, height {1}</value>
   </data>
+  <data name="OverlayAppearOnResume" xml:space="preserve">
+    <value>Also when playing starts again after a pause</value>
+  </data>
+  <data name="OverlayAppearSeconds" xml:space="preserve">
+    <value>Duration</value>
+  </data>
+  <data name="OverlayAppearance" xml:space="preserve">
+    <value>Display</value>
+  </data>
+  <data name="OverlayAppearanceHint" xml:space="preserve">
+    <value>On each new track: it appears, stays, then fades out</value>
+  </data>
   <data name="OverlayColorHint" xml:space="preserve">
     <value>“Glass” is a dark veil (OBS cannot blur the scene behind a Browser Source); “Cover” takes the main color of each track</value>
   </data>
@@ -234,6 +285,9 @@
   </data>
   <data name="PageGeneral" xml:space="preserve">
     <value>General</value>
+  </data>
+  <data name="PageHistory" xml:space="preserve">
+    <value>History</value>
   </data>
   <data name="PageOverlay" xml:space="preserve">
     <value>OBS overlay</value>
@@ -298,6 +352,12 @@
   <data name="QuitDescription" xml:space="preserve">
     <value>The widget and the overlays stop until NowPlaying is started again (Start menu).</value>
   </data>
+  <data name="ScreensAll" xml:space="preserve">
+    <value>All screens</value>
+  </data>
+  <data name="ScreensMain" xml:space="preserve">
+    <value>Main screen</value>
+  </data>
   <data name="SectionAdvanced" xml:space="preserve">
     <value>Advanced</value>
   </data>
@@ -312,6 +372,9 @@
   </data>
   <data name="SectionStyle" xml:space="preserve">
     <value>Style</value>
+  </data>
+  <data name="SectionTextFile" xml:space="preserve">
+    <value>Track info in a text file</value>
   </data>
   <data name="SliderResetHint" xml:space="preserve">
     <value>Double-click: back to {0} {1}</value>
@@ -372,6 +435,30 @@
   </data>
   <data name="StyleWidth" xml:space="preserve">
     <value>Width</value>
+  </data>
+  <data name="TextFile" xml:space="preserve">
+    <value>Text file</value>
+  </data>
+  <data name="TextFileContent" xml:space="preserve">
+    <value>Content (empty when nothing plays)</value>
+  </data>
+  <data name="TextFileFolder" xml:space="preserve">
+    <value>Folder</value>
+  </data>
+  <data name="TextFileHint" xml:space="preserve">
+    <value>The track playing in a file, for a “Text” source of OBS</value>
+  </data>
+  <data name="TextFilePath" xml:space="preserve">
+    <value>Location</value>
+  </data>
+  <data name="TextFormatArtistTitle" xml:space="preserve">
+    <value>Artist – Title</value>
+  </data>
+  <data name="TextFormatTitle" xml:space="preserve">
+    <value>Title only</value>
+  </data>
+  <data name="TextFormatTitleArtist" xml:space="preserve">
+    <value>Title – Artist</value>
   </data>
   <data name="Theme" xml:space="preserve">
     <value>App theme</value>
@@ -465,6 +552,12 @@
   </data>
   <data name="WidgetPreviewHint" xml:space="preserve">
     <value>Preview: hover it, turn the wheel for the volume</value>
+  </data>
+  <data name="WidgetScreens" xml:space="preserve">
+    <value>Screens</value>
+  </data>
+  <data name="WidgetScreensHint" xml:space="preserve">
+    <value>A widget on the taskbar of each screen</value>
   </data>
   <data name="WidgetShow" xml:space="preserve">
     <value>Show the widget in the taskbar</value>

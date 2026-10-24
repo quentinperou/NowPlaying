@@ -3,6 +3,7 @@ using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Interop;
 using System.Windows.Media;
+using NowPlaying.Core;
 using NowPlaying.Services;
 
 namespace NowPlaying;
@@ -36,7 +37,8 @@ internal static class PopupMenu
 
     /// <summary>The menu of the floating widget (right click): also above the windows or not, locked, hidden.</summary>
     public static void ShowFloating() =>
-        ShowSources(App.Media.Sources, App.Media.Pin, () => App.OpenMainWindow(MainPage.Floating), App.Quit, options: () =>
+        ShowSources(App.Media.Sources, App.Media.Pin, () => App.OpenMainWindow(MainPage.Floating), App.Quit,
+            copy: TrackText.Format(App.ShownMedia?.Title, App.ShownMedia?.Artist), options: () =>
         [
             Item(Strings.Get("FloatingTopmost"), App.Settings.FloatingTopmost ? Check : "",
                 () => App.SetFloatingTopmost(!App.Settings.FloatingTopmost)),
@@ -51,9 +53,10 @@ internal static class PopupMenu
     /// taskbar): only it may bring its menu to the front, and a menu not in front stays open when the user clicks
     /// elsewhere. <paramref name="aboveY"/>: the top of the taskbar, in screen pixels; the menu then opens above it,
     /// never over it (the taskbar may come over any window). <paramref name="options"/>: items of that widget.
+    /// <paramref name="copy"/>: the track shown as "title – artist", offered to copy (asked by the author, October 24, 2026).
     /// </summary>
     public static void ShowSources(IReadOnlyList<MediaSource> sources, Action<string> pin, Action customize, Action quit, int? aboveY = null,
-        Func<IEnumerable<MenuItem>>? options = null) => Show(() =>
+        Func<IEnumerable<MenuItem>>? options = null, string? copy = null) => Show(() =>
     {
         var menu = new ContextMenu { MinWidth = 280 };
         menu.Items.Add(new MenuItem { Header = Strings.Get("MenuSource"), IsEnabled = false });
@@ -64,6 +67,11 @@ internal static class PopupMenu
             menu.Items.Add(item);
         }
         menu.Items.Add(new Separator());
+        if (!string.IsNullOrEmpty(copy))
+        {
+            menu.Items.Add(Item(Strings.Get("MenuCopyTrack"), "", () => Copy(copy)));
+            menu.Items.Add(new Separator());
+        }
         if (options is not null)
         {
             foreach (var option in options())
@@ -126,6 +134,23 @@ internal static class PopupMenu
         };
         s_open = menu;
         menu.IsOpen = true;
+    }
+
+    /// <summary>Puts <paramref name="text"/> on the clipboard (another app may hold it a moment: tried again once).</summary>
+    public static void Copy(string text)
+    {
+        for (int attempt = 0; attempt < 2; attempt++)
+        {
+            try
+            {
+                Clipboard.SetText(text);
+                return;
+            }
+            catch (System.Runtime.InteropServices.COMException)
+            {
+                Thread.Sleep(60);
+            }
+        }
     }
 
     // The margin of the menu around its border, for its shadow (Menus.xaml).

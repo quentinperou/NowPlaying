@@ -34,8 +34,29 @@
     $('.live b').textContent = style.liveText || 'LIVE';
   }
 
+  // "On each new track" (a setting of the layout): shown when another track starts (or when the page opens on one),
+  // and when the playback starts again after a pause if asked, for a few seconds, then faded out.
+  // A timer, not the drawing loop, hides it again: a page in the background (or a browser that saves its frames)
+  // does not draw.
+  let shownUntil = 0, lastTrack = null, wasPlaying = false, hideTimer = 0;
+
+  function noteAppearance() {
+    const track = state.hasTrack ? state.title + '\u0000' + state.artist : null;
+    const resumed = style && style.appearOnResume && state.playing && !wasPlaying && track === lastTrack;
+    if (track && (track !== lastTrack || resumed)) {
+      const ms = ((style && style.appearSeconds) || 8) * 1000;
+      shownUntil = performance.now() + ms;
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(applyState, ms + 50);
+    }
+    lastTrack = track;
+    wasPlaying = !!state.playing;
+  }
+
+  const hiddenNow = now => !state.hasTrack || !style || (style.appearance === 'track' && !once && now > shownUntil);
+
   function applyState() {
-    el.classList.toggle('hidden', !state.hasTrack || !style);
+    el.classList.toggle('hidden', hiddenNow(performance.now()));
     $('.title').textContent = state.title || '';
     $('.artist').textContent = state.artist || '';
     $('.cover').style.backgroundImage = state.cover ? `url("${state.cover}")` : 'none';
@@ -82,7 +103,7 @@
     const events = new EventSource('/events?layout=' + layout);
     events.addEventListener('style', e => { style = JSON.parse(e.data); applyStyle(); applyState(); });
     events.addEventListener('state', e => {
-      state = JSON.parse(e.data); receivedAt = performance.now(); applyState();
+      state = JSON.parse(e.data); receivedAt = performance.now(); noteAppearance(); applyState();
       if (once) events.close();
     });
     events.addEventListener('levels', e => {

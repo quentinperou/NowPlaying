@@ -22,6 +22,12 @@
   <data name="AboutVersion" xml:space="preserve">
     <value>Version {0} · licence MIT</value>
   </data>
+  <data name="AppearanceAlways" xml:space="preserve">
+    <value>Toujours</value>
+  </data>
+  <data name="AppearanceOnNewTrack" xml:space="preserve">
+    <value>À chaque nouveau morceau</value>
+  </data>
   <data name="Apply" xml:space="preserve">
     <value>Appliquer</value>
   </data>
@@ -54,6 +60,12 @@
   </data>
   <data name="Copy" xml:space="preserve">
     <value>Copier</value>
+  </data>
+  <data name="CoverOpensPlayer" xml:space="preserve">
+    <value>Clic sur la pochette</value>
+  </data>
+  <data name="CoverOpensPlayerHint" xml:space="preserve">
+    <value>Ramène le lecteur au premier plan (Chrome, Spotify…)</value>
   </data>
   <data name="ElementArtist" xml:space="preserve">
     <value>Artiste</value>
@@ -130,6 +142,30 @@
   <data name="FloatingTopmostHint" xml:space="preserve">
     <value>Désactivé, il reste sous les fenêtres que vous utilisez, comme un widget posé sur le bureau</value>
   </data>
+  <data name="HistoryClear" xml:space="preserve">
+    <value>Effacer</value>
+  </data>
+  <data name="HistoryCopy" xml:space="preserve">
+    <value>Copier {0}</value>
+  </data>
+  <data name="HistoryEmpty" xml:space="preserve">
+    <value>Rien d&apos;écouté pour l&apos;instant</value>
+  </data>
+  <data name="HistoryEmptyHint" xml:space="preserve">
+    <value>Les morceaux joués s&apos;affichent ici, jour par jour</value>
+  </data>
+  <data name="HistoryKeep" xml:space="preserve">
+    <value>Garder l&apos;historique</value>
+  </data>
+  <data name="HistoryKeepHint" xml:space="preserve">
+    <value>Sur ce PC seulement, les {0} derniers jours</value>
+  </data>
+  <data name="HistoryToday" xml:space="preserve">
+    <value>Aujourd&apos;hui</value>
+  </data>
+  <data name="HistoryYesterday" xml:space="preserve">
+    <value>Hier</value>
+  </data>
   <data name="IdleHide" xml:space="preserve">
     <value>Cacher le widget</value>
   </data>
@@ -150,6 +186,9 @@
   </data>
   <data name="Live" xml:space="preserve">
     <value>EN DIRECT</value>
+  </data>
+  <data name="MenuCopyTrack" xml:space="preserve">
+    <value>Copier titre – artiste</value>
   </data>
   <data name="MenuCustomize" xml:space="preserve">
     <value>Personnaliser…</value>
@@ -196,6 +235,18 @@
   <data name="OverlayAddressHint" xml:space="preserve">
     <value>Source Navigateur · largeur {0}, hauteur {1}</value>
   </data>
+  <data name="OverlayAppearOnResume" xml:space="preserve">
+    <value>Aussi à la reprise après une pause</value>
+  </data>
+  <data name="OverlayAppearSeconds" xml:space="preserve">
+    <value>Durée</value>
+  </data>
+  <data name="OverlayAppearance" xml:space="preserve">
+    <value>Affichage</value>
+  </data>
+  <data name="OverlayAppearanceHint" xml:space="preserve">
+    <value>À chaque nouveau morceau : il apparaît, reste, puis s&apos;efface</value>
+  </data>
   <data name="OverlayColorHint" xml:space="preserve">
     <value>« Verre » est un voile sombre (OBS ne peut pas flouter la scène derrière une source Navigateur) ; « Pochette » prend la couleur dominante de chaque morceau</value>
   </data>
@@ -234,6 +285,9 @@
   </data>
   <data name="PageGeneral" xml:space="preserve">
     <value>Général</value>
+  </data>
+  <data name="PageHistory" xml:space="preserve">
+    <value>Historique</value>
   </data>
   <data name="PageOverlay" xml:space="preserve">
     <value>Overlay OBS</value>
@@ -298,6 +352,12 @@
   <data name="QuitDescription" xml:space="preserve">
     <value>Le widget et les overlays s&apos;arrêtent jusqu&apos;au prochain lancement de NowPlaying (menu Démarrer).</value>
   </data>
+  <data name="ScreensAll" xml:space="preserve">
+    <value>Tous les écrans</value>
+  </data>
+  <data name="ScreensMain" xml:space="preserve">
+    <value>Écran principal</value>
+  </data>
   <data name="SectionAdvanced" xml:space="preserve">
     <value>Avancé</value>
   </data>
@@ -312,6 +372,9 @@
   </data>
   <data name="SectionStyle" xml:space="preserve">
     <value>Style</value>
+  </data>
+  <data name="SectionTextFile" xml:space="preserve">
+    <value>Informations dans un fichier texte</value>
   </data>
   <data name="SliderResetHint" xml:space="preserve">
     <value>Double-clic : revenir à {0} {1}</value>
@@ -372,6 +435,30 @@
   </data>
   <data name="StyleWidth" xml:space="preserve">
     <value>Largeur</value>
+  </data>
+  <data name="TextFile" xml:space="preserve">
+    <value>Fichier texte</value>
+  </data>
+  <data name="TextFileContent" xml:space="preserve">
+    <value>Contenu (vide quand rien ne joue)</value>
+  </data>
+  <data name="TextFileFolder" xml:space="preserve">
+    <value>Dossier</value>
+  </data>
+  <data name="TextFileHint" xml:space="preserve">
+    <value>Le titre en cours dans un fichier, pour une source « Texte » d&apos;OBS</value>
+  </data>
+  <data name="TextFilePath" xml:space="preserve">
+    <value>Emplacement</value>
+  </data>
+  <data name="TextFormatArtistTitle" xml:space="preserve">
+    <value>Artiste – Titre</value>
+  </data>
+  <data name="TextFormatTitle" xml:space="preserve">
+    <value>Titre seul</value>
+  </data>
+  <data name="TextFormatTitleArtist" xml:space="preserve">
+    <value>Titre – Artiste</value>
   </data>
   <data name="Theme" xml:space="preserve">
     <value>Thème de l&apos;application</value>
@@ -465,6 +552,12 @@
   </data>
   <data name="WidgetPreviewHint" xml:space="preserve">
     <value>Aperçu : survolez-le, molette pour le volume</value>
+  </data>
+  <data name="WidgetScreens" xml:space="preserve">
+    <value>Écrans</value>
+  </data>
+  <data name="WidgetScreensHint" xml:space="preserve">
+    <value>Un widget dans la barre des tâches de chaque écran</value>
   </data>
   <data name="WidgetShow" xml:space="preserve">
     <value>Afficher le widget dans la barre des tâches</value>

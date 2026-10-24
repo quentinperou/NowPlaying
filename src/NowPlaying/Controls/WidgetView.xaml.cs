@@ -61,6 +61,14 @@ public partial class WidgetView : UserControl
             e.Handled = true;
             MenuRequested?.Invoke(this, EventArgs.Empty);
         };
+        // Not after a drag of the floating widget: its release is handled before it reaches the cover.
+        CoverBox.MouseLeftButtonUp += (_, e) =>
+        {
+            if (!_style.CoverOpensPlayer || _media is null || _idle)
+                return;
+            e.Handled = true;
+            CoverClicked?.Invoke(this, EventArgs.Empty);
+        };
         IsVisibleChanged += (_, _) => UpdateTimers();
         Unloaded += (_, _) => StopFrames();
         ApplyStyle(_style, _colors);
@@ -76,6 +84,9 @@ public partial class WidgetView : UserControl
     /// <summary>A click on the volume bar: the new volume (0 to 1).</summary>
     public event EventHandler<double>? VolumeRequested;
     public event EventHandler? MenuRequested;
+
+    /// <summary>A click on the cover, when the style asks it to bring the player to the front.</summary>
+    public event EventHandler? CoverClicked;
 
     /// <summary>The sound of the PC for the real spectrum; null: the bars never move (a preview without sound).</summary>
     internal AudioSpectrum? Spectrum { get; set; }
@@ -117,6 +128,7 @@ public partial class WidgetView : UserControl
         CoverPlaceholder(track);
 
         CoverBox.Visibility = style.ShowCover ? Visibility.Visible : Visibility.Collapsed;
+        CoverBox.Cursor = style.CoverOpensPlayer ? Cursors.Hand : null;
         Root.Padding = new Thickness(style.ShowCover ? 4 : 10, 0, 8, 0);
         ArtistText.Visibility = style.ShowArtist ? Visibility.Visible : Visibility.Collapsed;
         BarsPanel.Visibility = style.ShowVisualizer ? Visibility.Visible : Visibility.Collapsed;

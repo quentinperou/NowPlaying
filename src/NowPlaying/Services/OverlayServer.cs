@@ -173,6 +173,9 @@ internal sealed class OverlayServer : IDisposable
             showTimes = style.ShowTimes,
             visualizer = style.Visualizer == VisualizerMode.Spectrum ? "spectrum" : "animation",
             liveText = Strings.Get("Live"),
+            appearance = style.Appearance == OverlayAppearance.OnNewTrack ? "track" : "always",
+            appearSeconds = style.AppearSeconds,
+            appearOnResume = style.AppearOnResume,
         }, Json);
         if (layout == OverlayLayout.Bar)
             _barStyleJson = json;

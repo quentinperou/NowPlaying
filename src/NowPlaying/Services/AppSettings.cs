@@ -78,6 +78,18 @@ public sealed class AppSettings
     /// <summary>Port of the overlay pages (http://localhost:port/...), on this PC only.</summary>
     public int OverlayPort { get; set; } = DefaultOverlayPort;
 
+    /// <summary>The track playing written to <see cref="TextFilePath"/>, for a "Text" source of OBS (off by default).</summary>
+    public bool TextFileEnabled { get; set; }
+
+    public TrackTextFormat TextFileFormat { get; set; } = TrackTextFormat.TitleArtist;
+
+    /// <summary>Documents\NowPlaying\now-playing.txt: easy to find from OBS.</summary>
+    public static string TextFilePath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "NowPlaying", "now-playing.txt");
+
+    /// <summary>The tracks heard are kept for the History page (on this PC only).</summary>
+    public bool HistoryEnabled { get; set; } = true;
+
     /// <summary>
     /// Set once the “Start with Windows” default (on) has been applied, so that turning it off in Settings stays off.
     /// </summary>

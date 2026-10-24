@@ -19,6 +19,9 @@ internal sealed class TaskbarClient
     private readonly Application _app;
     private readonly LineChannel _channel;
     private readonly TaskbarWidget _widget;
+    // "Every screen": the widgets of the taskbars of the other screens, by taskbar.
+    private readonly Dictionary<IntPtr, TaskbarWidget> _others = [];
+    private readonly DispatcherTimer _screensAgain = new() { Interval = TimeSpan.FromSeconds(2) };
     private readonly int _appProcessId;
     private TaskbarState? _state;
     private string? _language;
@@ -30,7 +33,8 @@ internal sealed class TaskbarClient
         _appProcessId = appProcessId;
         _widget = new TaskbarWidget();
         _widget.View.Spectrum = new AudioSpectrum(app.Dispatcher);
-        Wire();
+        Wire(_widget);
+        WireMain();
         // The window exists (handle, owner, hooks) before it is shown for the first time.
         new System.Windows.Interop.WindowInteropHelper(_widget).EnsureHandle();
         _channel = new LineChannel(pipe,
@@ -86,13 +90,22 @@ internal sealed class TaskbarClient
         TryStart();
     }
 
-    private void Wire()
+    private IEnumerable<TaskbarWidget> Widgets => _others.Values.Prepend(_widget);
+
+    // A widget of any screen: its buttons, its menu (above its taskbar), its colors after what is behind it.
+    private void Wire(TaskbarWidget widget)
     {
-        var view = _widget.View;
+        var view = widget.View;
         view.PlayPauseRequested += (_, _) => _channel.Send("cmd", "playpause");
         view.NextRequested += (_, _) => _channel.Send("cmd", "next");
         view.PreviousRequested += (_, _) => _channel.Send("cmd", "previous");
         view.SeekRequested += (_, fraction) => _channel.Send("seek", fraction.ToString("0.####", CultureInfo.InvariantCulture));
+        // This process got the click: it may bring the player to the front itself.
+        view.CoverClicked += (_, _) =>
+        {
+            if (_state?.Media is { } media)
+                PlayerWindow.BringToFront(media.AppId);
+        };
         // The volume of the app that plays (Core Audio) is set from here: no round trip.
         view.VolumeWheel += (_, notches) =>
         {
@@ -115,7 +128,7 @@ internal sealed class TaskbarClient
         {
             if (_state is not { } state)
                 return;
-            GetWindowRect(FindWindow("Shell_TrayWnd", null), out var bar);
+            GetWindowRect(widget.Tray, out var bar);
             PopupMenu.ShowSources(state.Sources,
                 id => _channel.Send("pin", id),
                 () =>
@@ -125,19 +138,62 @@ internal sealed class TaskbarClient
                     _channel.Send("open");
                 },
                 () => _channel.Send("quit"),
-                aboveY: bar.Top);
+                aboveY: bar.Top,
+                copy: TrackText.Format(state.Media?.Title, state.Media?.Artist));
         };
 
+        widget.BackdropChanged += (_, _) => Apply();
+        widget.DisplayChanged += (_, _) => Apply();
+    }
+
+    // The widget of the main taskbar: what the app is told, and the end of this process with Explorer.
+    private void WireMain()
+    {
         _widget.BackdropChanged += (_, _) =>
-        {
-            Apply();
             _channel.Send("backdrop", _widget.BackdropIsDark switch { true => "dark", false => "light", null => "unknown" });
-        };
         _widget.TaskbarButtonsChanged += (_, _) =>
             _channel.Send("weather", _widget.WindowsWeatherShown switch { true => "shown", false => "hidden", null => "unknown" });
-        _widget.DisplayChanged += (_, _) => Apply();
+        // A screen plugged in: Explorer gives it its taskbar a moment later.
+        _widget.DisplayChanged += (_, _) =>
+        {
+            _screensAgain.Stop();
+            _screensAgain.Start();
+        };
+        _screensAgain.Tick += (_, _) =>
+        {
+            _screensAgain.Stop();
+            Apply();
+        };
         // Its taskbar went away with Explorer: this process ends, the app starts a new one for the new taskbar.
         _widget.Closed += (_, _) => Quit();
+    }
+
+    // "Every screen": a widget on the taskbar of each other screen, made or closed as the screens come and go.
+    private void SyncScreens(bool every)
+    {
+        var trays = new HashSet<IntPtr>();
+        if (every)
+            for (IntPtr tray = FindWindowEx(IntPtr.Zero, IntPtr.Zero, "Shell_SecondaryTrayWnd", null); tray != IntPtr.Zero;
+                 tray = FindWindowEx(IntPtr.Zero, tray, "Shell_SecondaryTrayWnd", null))
+                trays.Add(tray);
+        foreach (var (tray, widget) in _others.ToList())
+            if (!trays.Contains(tray))
+            {
+                _others.Remove(tray);
+                widget.Close();
+            }
+        foreach (var tray in trays)
+        {
+            if (_others.ContainsKey(tray))
+                continue;
+            var widget = new TaskbarWidget(tray);
+            widget.View.Spectrum = _widget.View.Spectrum; // one capture of the sound for all of them
+            Wire(widget);
+            // Its screen unplugged: its taskbar, its owner, takes it away.
+            widget.Closed += (_, _) => _others.Remove(tray);
+            new System.Windows.Interop.WindowInteropHelper(widget).EnsureHandle();
+            _others[tray] = widget;
+        }
     }
 
     private void Received(string line)
@@ -180,10 +236,15 @@ internal sealed class TaskbarClient
             return;
         var style = state.Style.Normalized();
         var media = state.Media?.ToSnapshot(state.Media.CoverKey == _cover.Key ? _cover.Cover : null);
-        _widget.WidgetStyle = style;
-        _widget.View.ApplyStyle(style, SurfaceColors.Resolve(style, media?.CoverColor, _widget.BackdropIsDark ?? WindowsSettings.TaskbarIsDark, overlay: false));
-        _widget.View.ShowMedia(media, state.Idle);
-        _widget.SetWanted(state.Wanted);
+        SyncScreens(style.AllScreens);
+        foreach (var widget in Widgets.ToList())
+        {
+            widget.WidgetStyle = style;
+            // Each one dark or light after its own taskbar.
+            widget.View.ApplyStyle(style, SurfaceColors.Resolve(style, media?.CoverColor, widget.BackdropIsDark ?? WindowsSettings.TaskbarIsDark, overlay: false));
+            widget.View.ShowMedia(media, state.Idle);
+            widget.SetWanted(state.Wanted);
+        }
     }
 
     private void Quit()

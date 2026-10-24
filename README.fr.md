@@ -19,8 +19,9 @@
 
 ---
 
-> **Début du développement.** La version 0.2 ajoute un widget flottant et un widget pour le tableau Widgets de
-> Windows. Aimer un morceau (Spotify) et les barres des tâches des autres écrans viendront ensuite.
+> **Début du développement.** La version 0.2 a ajouté un widget flottant et un widget pour le tableau Widgets de
+> Windows ; la 0.3 ajoute un historique et les barres des tâches des autres écrans. Aimer un morceau (Spotify) viendra
+> ensuite.
 
 ## Fonctionnalités
 
@@ -33,6 +34,7 @@
 - Un **visualiseur** : le vrai spectre du son, ou une animation calme.
 - Le texte reste lisible : sa couleur suit ce qu'il y a vraiment derrière le widget (barre des tâches claire ou
   sombre, colorée ou transparente).
+- Sur l'écran principal ou sur tous les écrans ; un clic sur la pochette peut ramener le lecteur au premier plan.
 - À gauche, après la météo de Windows, ou à côté de l'horloge. Caché par-dessus les applications en plein écran,
   visible même menu Démarrer ouvert. Désactivez la météo de Windows (l'application ouvre la bonne page des
   paramètres) et le widget prend sa place.
@@ -63,6 +65,8 @@
   mise à jour en direct.
 - Deux modèles : une **barre compacte** (comme dans la barre des tâches) et une **carte**, chacun avec le temps et la
   progression si vous voulez.
+- Toujours sur la scène, ou **quelques secondes à chaque nouveau morceau**.
+- Un **fichier texte** avec le titre, pour une source Texte.
 - Désactivé tant que vous ne l'activez pas (**NowPlaying → Overlay OBS**).
 
 ### À votre style
@@ -73,6 +77,8 @@
 ### Et aussi
 
 - L'apparence de Windows 11 (Fluent, Mica), thème clair ou sombre ; des menus comme ceux de Windows.
+- Un **historique** de ce qui a joué, jour par jour, sur ce PC seulement ; copiez un titre en un clic (aussi depuis le
+  clic droit d'un widget).
 - **Anglais et français**.
 - **Démarre avec Windows**, et ne consomme rien quand rien ne joue.
 - **Mises à jour en un clic** depuis l'application (GitHub Releases).
@@ -82,7 +88,7 @@
 - [x] Widget de la barre des tâches, overlay OBS, personnalisation.
 - [x] Widget flottant, widget du tableau Widgets.
 - [ ] Aimer le morceau (Spotify).
-- [ ] Les barres des tâches des autres écrans.
+- [x] Les barres des tâches des autres écrans, un historique, l'overlay à chaque nouveau morceau.
 
 ## Installation
 

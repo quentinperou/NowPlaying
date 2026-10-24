@@ -79,6 +79,10 @@ public class LocalizationTests
             Assert.Contains("Position" + value, keys);
         foreach (var value in Enum.GetValues<IdleMode>())
             Assert.Contains("Idle" + value, keys);
+        foreach (var value in Enum.GetValues<OverlayAppearance>())
+            Assert.Contains("Appearance" + value, keys);
+        foreach (var value in Enum.GetValues<TrackTextFormat>())
+            Assert.Contains("TextFormat" + value, keys);
         foreach (var value in Enum.GetValues<OverlayLayout>())
             Assert.Contains("Layout" + value, keys);
     }

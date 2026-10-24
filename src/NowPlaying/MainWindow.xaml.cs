@@ -12,6 +12,7 @@ namespace NowPlaying;
 public enum MainPage
 {
     Sources,
+    History,
     Widget,
     Floating,
     Overlay,
@@ -71,6 +72,7 @@ public partial class MainWindow : Window
             content = page switch
             {
                 MainPage.Sources => BuildSourcesPage(),
+                MainPage.History => BuildHistoryPage(),
                 MainPage.Widget => BuildWidgetPage(),
                 MainPage.Floating => BuildFloatingPage(),
                 MainPage.Overlay => BuildOverlayPage(),
@@ -90,6 +92,7 @@ public partial class MainWindow : Window
         var (glyph, key) = page switch
         {
             MainPage.Sources => ("", "PageSources"),
+            MainPage.History => ("", "PageHistory"),
             MainPage.Widget => ("", "PageWidget"),
             MainPage.Floating => ("", "PageFloating"),
             MainPage.Overlay => ("", "PageOverlay"),
@@ -301,6 +304,108 @@ public partial class MainWindow : Window
         return palette[(int)((uint)sum % palette.Length)];
     }
 
+    // ---------------------------------------------------------------- History page
+
+    private const int HistoryShown = 300;
+    private StackPanel? _history;
+    private readonly Dictionary<string, ImageSource?> _historyCovers = [];
+
+    // The tracks heard, the newest first, by day, each with a button to copy it (asked by the author, October 24, 2026;
+    // mock-up `.local/maquettes/idees-0-3.png`).
+    private FrameworkElement BuildHistoryPage()
+    {
+        var settings = App.Settings;
+        var page = new StackPanel();
+        page.Children.Add(Ui.PageTitle(Strings.Get("PageHistory")));
+        var keep = new StackPanel { Orientation = Orientation.Horizontal };
+        keep.Children.Add(Ui.Button(Strings.Get("HistoryClear"), App.History.Clear, glyph: ""));
+        keep.Children.Add(Spaced(Ui.Toggle(settings.HistoryEnabled, on =>
+        {
+            settings.HistoryEnabled = on;
+            settings.Save();
+        }, Strings.Get("HistoryKeep"))));
+        page.Children.Add(Ui.Card("", Strings.Get("HistoryKeep"), Strings.Format("HistoryKeepHint", PlayHistory.MaxDays), keep));
+        _history = new StackPanel();
+        page.Children.Add(_history);
+        App.History.Changed += HistoryChanged;
+        Closed += (_, _) => App.History.Changed -= HistoryChanged;
+        ShowHistory();
+        return page;
+    }
+
+    private void HistoryChanged(object? sender, EventArgs e) => ShowHistory();
+
+    private void ShowHistory()
+    {
+        if (_history is null)
+            return;
+        _history.Children.Clear();
+        var entries = App.History.History.Entries;
+        if (entries.Count == 0)
+        {
+            _history.Children.Add(Ui.Card("", Strings.Get("HistoryEmpty"), Strings.Get("HistoryEmptyHint")));
+            return;
+        }
+        DateTime? day = null;
+        foreach (var entry in entries.Take(HistoryShown))
+        {
+            var played = entry.Played.ToLocalTime().DateTime;
+            if (played.Date != day)
+            {
+                day = played.Date;
+                _history.Children.Add(DayTitle(played.Date));
+            }
+            _history.Children.Add(HistoryRow(entry, played));
+        }
+    }
+
+    private static TextBlock DayTitle(DateTime date)
+    {
+        var culture = System.Globalization.CultureInfo.CurrentUICulture;
+        string text = date == DateTime.Today ? Strings.Get("HistoryToday")
+            : date == DateTime.Today.AddDays(-1) ? Strings.Get("HistoryYesterday")
+            : date.ToString("dddd d MMMM", culture);
+        text = char.ToUpper(text[0], culture) + text[1..];
+        return new TextBlock { Text = text, Style = (Style)Application.Current.FindResource("CardDescription"), Margin = new Thickness(2, 12, 0, 6) };
+    }
+
+    // One track: the time, its cover, its title, its artist and player, a button to copy "title – artist".
+    private Border HistoryRow(HistoryEntry entry, DateTime played)
+    {
+        var dock = new DockPanel();
+        var time = new TextBlock { Text = played.ToString("t", System.Globalization.CultureInfo.CurrentUICulture), Width = 52, VerticalAlignment = VerticalAlignment.Center };
+        time.SetResourceReference(TextBlock.ForegroundProperty, "TextFillColorSecondaryBrush");
+        DockPanel.SetDock(time, Dock.Left);
+        dock.Children.Add(time);
+
+        string key = entry.Cover ?? "";
+        if (!_historyCovers.TryGetValue(key, out var picture))
+            _historyCovers[key] = picture = HistoryStore.Cover(entry);
+        var cover = new Border { Width = 30, Height = 30, CornerRadius = new CornerRadius(4), Margin = new Thickness(0, 0, 12, 0) };
+        if (picture is not null)
+            cover.Background = new ImageBrush(picture) { Stretch = Stretch.UniformToFill };
+        else
+            cover.SetResourceReference(Border.BackgroundProperty, "ControlFillColorSecondaryBrush");
+        DockPanel.SetDock(cover, Dock.Left);
+        dock.Children.Add(cover);
+
+        string line = TrackText.Format(entry.Title, entry.Artist);
+        var copy = Arrow("", Strings.Format("HistoryCopy", line), true, () => CopyText(line));
+        copy.ToolTip = Strings.Get("Copy");
+        copy.Margin = new Thickness(12, 0, 0, 0);
+        DockPanel.SetDock(copy, Dock.Right);
+        dock.Children.Add(copy);
+
+        var texts = Ui.Texts(entry.Title, entry.Artist.Length > 0 ? $"{entry.Artist} · {entry.Player}" : entry.Player);
+        if (texts.Children[0] is TextBlock title)
+        {
+            title.TextWrapping = TextWrapping.NoWrap;
+            title.TextTrimming = TextTrimming.CharacterEllipsis;
+        }
+        dock.Children.Add(texts);
+        return new Border { Style = (Style)Application.Current.FindResource("Card"), Child = dock, Padding = new Thickness(12, 6, 12, 6), MinHeight = 46 };
+    }
+
     // ---------------------------------------------------------------- Taskbar page
 
     private FrameworkElement BuildWidgetPage()
@@ -323,6 +428,10 @@ public partial class MainWindow : Window
         page.Children.Add(new Border { Style = (Style)Application.Current.FindResource("Card"), Child = preview, Padding = new Thickness(16, 12, 16, 16) });
 
         page.Children.Add(Ui.Section(Strings.Get("SectionPlace")));
+        // On the taskbar of every screen too: a widget on each, of the same style (asked by the author, October 24, 2026).
+        page.Children.Add(Ui.Card("", Strings.Get("WidgetScreens"), Strings.Get("WidgetScreensHint"),
+            Segmented.Of([(false, Strings.Get("ScreensMain")), (true, Strings.Get("ScreensAll"))], style.AllScreens,
+                all => { style.AllScreens = all; App.ApplyStyles(); })));
         page.Children.Add(Ui.Card("", Strings.Get("WidgetPosition"), Strings.Get("WidgetPositionHint"),
             Segmented.Of(
                 [(WidgetPosition.Left, Strings.Get("PositionLeft")), (WidgetPosition.NearClock, Strings.Get("PositionNearClock"))],
@@ -356,6 +465,8 @@ public partial class MainWindow : Window
         page.Children.Add(editor);
 
         page.Children.Add(Ui.Section(Strings.Get("SectionBehavior")));
+        page.Children.Add(Ui.Card("", Strings.Get("CoverOpensPlayer"), Strings.Get("CoverOpensPlayerHint"),
+            Ui.Toggle(style.CoverOpensPlayer, on => { style.CoverOpensPlayer = on; App.ApplyStyles(); }, Strings.Get("CoverOpensPlayer"))));
         page.Children.Add(Ui.Card("", Strings.Get("StyleVisualizer"), Strings.Get("StyleVisualizerHint"),
             Segmented.Of(
                 [(VisualizerMode.Spectrum, Strings.Get("VisualizerSpectrum")), (VisualizerMode.Animation, Strings.Get("VisualizerAnimation"))],
@@ -439,6 +550,8 @@ public partial class MainWindow : Window
         page.Children.Add(editor);
 
         page.Children.Add(Ui.Section(Strings.Get("SectionBehavior")));
+        page.Children.Add(Ui.Card("", Strings.Get("CoverOpensPlayer"), Strings.Get("CoverOpensPlayerHint"),
+            Ui.Toggle(style.CoverOpensPlayer, on => { style.CoverOpensPlayer = on; App.ApplyStyles(); }, Strings.Get("CoverOpensPlayer"))));
         page.Children.Add(Ui.Card("", Strings.Get("StyleVisualizer"), Strings.Get("StyleVisualizerHint"),
             Segmented.Of(
                 [(VisualizerMode.Spectrum, Strings.Get("VisualizerSpectrum")), (VisualizerMode.Animation, Strings.Get("VisualizerAnimation"))],
@@ -483,8 +596,32 @@ public partial class MainWindow : Window
         layoutHost.Content = BuildOverlayLayout(_overlayLayout);
         content.Children.Add(layoutHost);
 
-        // The port of the pages (http://localhost:port/...), for when another program already uses it.
+        // The track in a text file too, for a "Text" source of OBS (asked by the author with the overlay shown on each new
+        // track, October 24, 2026). Its rows stay shown while it is off, greyed.
         var settings = App.Settings;
+        content.Children.Add(Ui.Section(Strings.Get("SectionTextFile")));
+        var path = new StackPanel { Orientation = Orientation.Horizontal };
+        var pathBox = new TextBox { Text = AppSettings.TextFilePath, IsReadOnly = true, Width = 300, FontFamily = new FontFamily("Cascadia Mono, Consolas"), VerticalAlignment = VerticalAlignment.Center };
+        System.Windows.Automation.AutomationProperties.SetName(pathBox, Strings.Get("TextFilePath"));
+        path.Children.Add(pathBox);
+        path.Children.Add(Spaced(Ui.Button(Strings.Get("Copy"), () => CopyText(AppSettings.TextFilePath), glyph: "")));
+        path.Children.Add(Spaced(Ui.Button(Strings.Get("TextFileFolder"), ShowTextFile, glyph: "")));
+        var pathRow = Ui.SubCard(Strings.Get("TextFilePath"), path);
+        var formatRow = Ui.SubCard(Strings.Get("TextFileContent"),
+            Ui.Choice(Enum.GetValues<TrackTextFormat>().Select(f => (f, Strings.Get("TextFormat" + f))), settings.TextFileFormat,
+                format => App.SetTextFile(settings.TextFileEnabled, format), 220));
+        void ShowFileRows() => Ui.Enable(settings.TextFileEnabled, pathRow, formatRow);
+        content.Children.Add(Ui.Card("", Strings.Get("TextFile"), Strings.Get("TextFileHint"),
+            Ui.Toggle(settings.TextFileEnabled, on =>
+            {
+                App.SetTextFile(on, settings.TextFileFormat);
+                ShowFileRows();
+            }, Strings.Get("TextFile"))));
+        content.Children.Add(pathRow);
+        content.Children.Add(formatRow);
+        ShowFileRows();
+
+        // The port of the pages (http://localhost:port/...), for when another program already uses it.
         content.Children.Add(Ui.Section(Strings.Get("SectionAdvanced")));
         var port = new TextBox { Width = 90, Text = settings.OverlayPort.ToString(), VerticalAlignment = VerticalAlignment.Center };
         System.Windows.Automation.AutomationProperties.SetName(port, Strings.Get("OverlayPort"));
@@ -512,6 +649,27 @@ public partial class MainWindow : Window
     {
         var style = App.Settings.Overlay(layout);
         var panel = new StackPanel();
+
+        // On the scene all the time, or a few seconds at each new track (each layout its own; the rows of the second
+        // way stay shown, greyed, as the other settings that are off).
+        var duration = Ui.Slider(OverlayStyle.AppearSecondsRange.Min, OverlayStyle.AppearSecondsRange.Max, style.AppearSeconds,
+            OverlayStyle.DefaultAppearSeconds, "s", v => { style.AppearSeconds = v; App.ApplyStyles(); }, Strings.Get("OverlayAppearSeconds"));
+        var durationRow = Ui.SubCard(Strings.Get("OverlayAppearSeconds"), duration);
+        var resumeRow = Ui.SubCard(Strings.Get("OverlayAppearOnResume"),
+            Ui.Toggle(style.AppearOnResume, on => { style.AppearOnResume = on; App.ApplyStyles(); }, Strings.Get("OverlayAppearOnResume")));
+        void ShowAppearRows() => Ui.Enable(style.Appearance == OverlayAppearance.OnNewTrack, durationRow, resumeRow);
+        panel.Children.Add(Ui.Card("", Strings.Get("OverlayAppearance"), Strings.Get("OverlayAppearanceHint"),
+            Segmented.Of(
+                [(OverlayAppearance.Always, Strings.Get("AppearanceAlways")), (OverlayAppearance.OnNewTrack, Strings.Get("AppearanceOnNewTrack"))],
+                style.Appearance, appearance =>
+                {
+                    style.Appearance = appearance;
+                    ShowAppearRows();
+                    App.ApplyStyles();
+                })));
+        panel.Children.Add(durationRow);
+        panel.Children.Add(resumeRow);
+        ShowAppearRows();
 
         _overlayPreview = new OverlayPreview { Spectrum = App.Spectrum };
         _overlayStage = new Border { Height = 210, CornerRadius = new CornerRadius(6), Child = _overlayPreview, ClipToBounds = true };
@@ -866,6 +1024,21 @@ public partial class MainWindow : Window
         catch (System.Runtime.InteropServices.COMException)
         {
             // The clipboard is held by another app for a moment.
+        }
+    }
+
+    // The text file in its folder (the folder alone before anything was written).
+    private static void ShowTextFile()
+    {
+        string file = AppSettings.TextFilePath, folder = Path.GetDirectoryName(file)!;
+        try
+        {
+            Directory.CreateDirectory(folder);
+            Process.Start(new ProcessStartInfo("explorer.exe", File.Exists(file) ? $"/select,\"{file}\"" : $"\"{folder}\"") { UseShellExecute = true });
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+        {
+            Debug.WriteLine($"Text file folder: {ex.Message}");
         }
     }
 

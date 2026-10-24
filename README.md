@@ -19,8 +19,8 @@
 
 ---
 
-> **Early development.** Version 0.2 adds a floating widget and a widget for the Windows Widgets board. Liking a
-> track (Spotify) and the taskbars of the other screens will come next.
+> **Early development.** Version 0.2 added a floating widget and a widget for the Windows Widgets board; 0.3 adds a
+> history and the taskbars of the other screens. Liking a track (Spotify) will come next.
 
 ## Features
 
@@ -33,6 +33,7 @@
 - A **visualizer**: the real spectrum of the sound, or a calm animation.
 - The text stays readable: its color follows what is really behind the widget (a light or dark taskbar, a colored or
   see-through one).
+- On the main screen or on every screen; a click on the cover can bring the player to the front.
 - On the left, after Windows' weather, or next to the clock. Hidden over full-screen apps, visible even while Start is
   open. Turn off Windows' weather (the app opens the right settings page) and the widget takes its place.
 
@@ -59,6 +60,8 @@
 
 - An **overlay for OBS Studio**: a Browser Source pointing to a page of the app, transparent, updated live.
 - Two layouts: a **compact bar** (as in the taskbar) and a **card**, each with the time and the progress if you like.
+- Always on the scene, or **a few seconds at each new track**.
+- A **text file** with the track, for a Text source.
 - Off until you turn it on (**NowPlaying → OBS overlay**).
 
 ### Your style
@@ -69,6 +72,7 @@
 ### And also
 
 - Windows 11 look (Fluent, Mica), light or dark theme; menus like Windows' own.
+- A **history** of what played, by day, on this PC only; copy a title in one click (also from a widget's right click).
 - **English and French**.
 - **Starts with Windows**, and uses nothing while nothing plays.
 - **Updates in one click** from the app (GitHub Releases).
@@ -78,7 +82,7 @@
 - [x] Taskbar widget, OBS overlay, customization.
 - [x] Floating widget, Widgets board widget.
 - [ ] Like the track (Spotify).
-- [ ] The taskbars of the other screens.
+- [x] The taskbars of the other screens, a history, the overlay on each new track.
 
 ## Installation
 

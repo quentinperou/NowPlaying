@@ -50,7 +50,8 @@ internal static class AppVolume
         }
     }
 
-    private static bool BelongsTo(string appId, int pid)
+    /// <summary>Whether the process <paramref name="pid"/> is the player <paramref name="appId"/> (also used to find its window).</summary>
+    internal static bool BelongsTo(string appId, int pid)
     {
         string name;
         try

@@ -225,6 +225,31 @@ internal static class NativeMethods
     public const int WS_EX_NOREDIRECTIONBITMAP = 0x00200000;
     public const int SW_HIDE = 0;
     public const int SW_SHOWNOACTIVATE = 4;
+    public const int SW_RESTORE = 9;
+    public const uint GW_OWNER = 4;
+
+    public delegate bool EnumWindowsProc(IntPtr hwnd, IntPtr data);
+
+    [DllImport("user32.dll")]
+    public static extern bool EnumWindows(EnumWindowsProc callback, IntPtr data);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsWindowVisible(IntPtr hwnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsIconic(IntPtr hwnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsWindow(IntPtr hwnd);
+
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetWindow(IntPtr hwnd, uint command);
+
+    [DllImport("user32.dll")]
+    public static extern int GetWindowTextLength(IntPtr hwnd);
+
+    [DllImport("user32.dll")]
+    public static extern uint GetWindowThreadProcessId(IntPtr hwnd, out int processId);
 
     [DllImport("user32.dll")]
     public static extern bool ShowWindow(IntPtr hwnd, int command);

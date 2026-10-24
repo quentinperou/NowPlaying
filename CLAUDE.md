@@ -40,6 +40,27 @@ plays: alternate the builds, several times, before concluding. The floating widg
 
 ## Project status (October 21, 2026)
 
+**Version 0.3.0** (October 24, 2026; installed on the shop PC over 0.2.4 at his request, silently, settings kept;
+committed with tag `v0.3.0`, not pushed): four features he chose among ideas (mock-up `.local/maquettes/idees-0-3.png`, approved), all optional
+(the section of the text file renamed by him "Informations dans un fichier texte"; he declined a click on a history
+row searching the track: Windows gives no link):
+
+- the **OBS overlay "on each new track"** (each layout its own): it appears at a new track (and on opening), stays
+  `AppearSeconds` (8 s), fades out; optionally again when playing resumes. Done by the page (`overlay.js`, a timer:
+  a page in the background draws no frames). Checked in a browser: shown at load, hidden at 8.2 s.
+- a **text file for OBS** (`Documents\NowPlaying\now-playing.txt`, "Title – Artist" or other, empty when nothing
+  plays, written only on change through a temporary file: `TrackFile`). Checked: on, the line; off, empty.
+- a **History** page (second in the menu): tracks heard by day, a copy button each; `PlayHistory` (Core: one entry per
+  track, not per pause; 30 days, 1000 entries) saved by `HistoryStore` in `history.json`, the covers as 64 px JPEGs
+  in `covers\` (read only when the page shows them). And **"Copy title – artist"** in both widgets' menus.
+- **Click on the cover** brings the player to the front (`PlayerWindow`: its window last in front, restored if
+  minimized; a Store app opened again from `shell:AppsFolder`), a setting of each widget, off by default. Not tried
+  by a click (it would take the author's focus).
+- The taskbar widget on **every screen** (`WidgetStyle.AllScreens`): one widget per `Shell_SecondaryTrayWnd`, owned by
+  it, made and closed as screens come and go (`TaskbarClient.SyncScreens`); near the clock of a secondary taskbar:
+  left of its `SystemTrayIcon` (it has no `TrayNotifyWnd`). Checked on the shop PC's second screen: after its weather,
+  or 8 px from its clock; gone again on "main screen".
+
 **Version 0.2.4** (October 24, 2026; installed on the shop PC over 0.2.3 at his request, silently, settings kept;
 committed with tag `v0.2.4`, not pushed): he hid Chrome on the Sources page and
 still saw its track. The 4 s kept after a session ends applied to a player he hides himself too: a player hidden now
@@ -245,8 +266,8 @@ one would show the desktop behind it) and the widget on a Windows 11 taskbar. Ma
 
 | Folder | Role |
 |--------|------|
-| `src/NowPlaying.Core` | Pure, tested logic: `SourcePicker` (which player to show, the rules of the Sources page), `Timeline` (position between reports, "3:34"), `DominantColor` (color of a cover, readable under white text), `SpectrumAnalyzer` (Hann + FFT + log bands + smoothing) and `DecorativeBars`, `Styles` (`WidgetStyle`, `OverlayStyle`, enums, ranges), `SurfaceColors` (background / text / track from a style), `Rgb`, `AppIdentity` (player names, process matching), `SemanticVersion`, `UpdateFeed`. |
-| `src/NowPlaying` | WPF .NET 10. `App` (single instance, tray, widgets, overlay, commands; `--taskbar`: the widget process), `TaskbarWidget` (the window over the taskbar, in the widget process), `FloatingWidget` + `FloatingGlass` (its blur) + `FloatingShadow`, `MainWindow` (pages built in code), `PopupMenu` + `Menus.xaml` (tray and widget menus), `UpdateBar`, `Localization.cs`; `Controls/`: `WidgetView` (the widget, also the previews), `BarsView`, `OverlayPreview`, `StyleEditor`, `Ui` (cards, `Segmented`); `Services/`: `MediaSessions`, `AppNames`, `AppVolume`, `AudioSpectrum`, `OverlayServer`, `TaskbarHost` (app side) + `TaskbarClient` (widget process) + `TaskbarLink` (`LineChannel`, the messages), `SeeThrough`, `TrayHost`, `AppSettings`, `WindowsSettings`, `SingleInstance`, `MicaBackdrop`, `MemoryTrim`, `Updater`, `NativeMethods`; `Overlay/`: the overlay page (HTML, CSS, JS, embedded). |
+| `src/NowPlaying.Core` | Pure, tested logic: `SourcePicker` (which player to show, the rules of the Sources page), `PlayHistory` (the tracks heard), `TrackText` (a track as one line), `Timeline` (position between reports, "3:34"), `DominantColor` (color of a cover, readable under white text), `SpectrumAnalyzer` (Hann + FFT + log bands + smoothing) and `DecorativeBars`, `Styles` (`WidgetStyle`, `OverlayStyle`, enums, ranges), `SurfaceColors` (background / text / track from a style), `Rgb`, `AppIdentity` (player names, process matching), `SemanticVersion`, `UpdateFeed`. |
+| `src/NowPlaying` | WPF .NET 10. `App` (single instance, tray, widgets, overlay, commands; `--taskbar`: the widget process), `TaskbarWidget` (the window over the taskbar, in the widget process), `FloatingWidget` + `FloatingGlass` (its blur) + `FloatingShadow`, `MainWindow` (pages built in code), `PopupMenu` + `Menus.xaml` (tray and widget menus), `UpdateBar`, `Localization.cs`; `Controls/`: `WidgetView` (the widget, also the previews), `BarsView`, `OverlayPreview`, `StyleEditor`, `Ui` (cards, `Segmented`); `Services/`: `MediaSessions`, `AppNames`, `AppVolume`, `PlayerWindow`, `HistoryStore`, `TrackFile`, `AudioSpectrum`, `OverlayServer`, `TaskbarHost` (app side) + `TaskbarClient` (widget process) + `TaskbarLink` (`LineChannel`, the messages), `SeeThrough`, `TrayHost`, `AppSettings`, `WindowsSettings`, `SingleInstance`, `MicaBackdrop`, `MemoryTrim`, `Updater`, `NativeMethods`; `Overlay/`: the overlay page (HTML, CSS, JS, embedded). |
 | `src/NowPlaying.Widgets` | The widget of the Windows Widgets board: a COM server (`Program`, `ClassFactory`, `WidgetProvider`) that Windows starts while the widget is on the board; `AppLink` (what plays from the app's local server, its buttons back), `Card` (Adaptive Card template and data), `Artwork` (the pictures: blurred background, rounded cover, icons). `package/`: the sparse package (manifest, logos, picker previews). Windows App SDK widgets component, self-contained. |
 | `tests/NowPlaying.Tests` | xUnit: Core, update feed, localization key parity. |
 | `installer/NowPlaying.iss` | Inno Setup (English/French), .NET 10 Desktop Runtime check, closes the running app, registers the Widgets package (Windows 11, `Add-AppxPackage -AllowUnsigned`; kept across updates, removed at uninstall). |
@@ -377,16 +398,19 @@ English (default) and French, following the Windows display language or chosen i
   asks at each update instead (`WidgetView.HoldSpectrum`). The taskbar widget gets a copy through the pipe.
 - The spectrum's loudness depends on the player's volume (loopback captures the mix): `.local\cs\loopback.cs`
   prints the level of the default output.
+- A browser page in the background draws no frames (`requestAnimationFrame` stops): what must happen at a time on the
+  overlay page (hide after a few seconds) uses a timer.
 - To see a menu without the mouse: post the tray icon's callback (`WM_APP + 1`, lParam `WM_CONTEXTMENU`) to the
   hidden "NowPlaying" window, picture the popup's rectangle, post it again to close the menu.
 
 ## To do
 
 - [ ] The author pushes from home: the repository has no remote yet (the GitHub repository `quentinperou/NowPlaying`
-      is to be created), six commits and six lightweight tags (`v0.1.3`, `v0.2.0` to `v0.2.4`) wait. Each `v*` tag
-      pushed makes a GitHub release (the workflow).
-- [ ] The author tries 0.2.4 (installed on the shop PC): the Sources page with real players, the widget menus, the
-      drag of the floating widget, OBS itself, Spotify, a real live stream in the widget.
+      is to be created), seven commits and seven lightweight tags (`v0.1.3`, `v0.2.0` to `v0.2.4`, `v0.3.0`) wait.
+      Each `v*` tag pushed makes a GitHub release (the workflow).
+- [ ] The author tries 0.3.0 (installed on the shop PC): the Sources page with real players, the widget menus (and
+      "Copy title – artist"), the click on the cover, the drag of the floating widget, OBS itself (the overlay on each
+      new track, the text file), Spotify, a real live stream in the widget.
 - [ ] With the window open on the Floating widget page, the Debug build used about 32 % of one core: look into it.
-- [ ] Later: like (Spotify), the taskbars of the other screens, spectrum of the player only (process loopback of
+- [ ] Later: like (Spotify), spectrum of the player only (process loopback of
       Windows 11).

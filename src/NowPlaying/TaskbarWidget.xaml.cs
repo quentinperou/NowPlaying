@@ -10,8 +10,8 @@ namespace NowPlaying;
 
 /// <summary>
 /// The widget in the taskbar. Windows 11 lets no app add anything to its taskbar: this is a window of its own, laid
-/// over the taskbar of the main screen (left, or near the clock), hidden over full-screen apps and while an
-/// auto-hidden taskbar is away. Its owner is the taskbar: an owned window always stays above its owner, even when
+/// over the taskbar of the main screen, or of another screen (<see cref="Tray"/>; "every screen", asked by the author on
+/// October 24, 2026), left or near the clock, hidden over full-screen apps and while an auto-hidden taskbar is away. Its owner is the taskbar: an owned window always stays above its owner, even when
 /// Windows lifts the taskbar over every window while Start or search is open (a topmost window then went under it).
 /// That tie lets the two threads share their input: the window runs in the widget process only (see
 /// <see cref="Services.TaskbarHost"/>), which the app ends if it ever stops answering.
@@ -28,11 +28,20 @@ public partial class TaskbarWidget : Window
     private bool _wanted;
     private readonly DispatcherTimer _autoHideTimer = new() { Interval = TimeSpan.FromMilliseconds(300) };
 
-    public TaskbarWidget()
+    private readonly IntPtr _secondaryTray;
+
+    /// <param name="secondaryTray">The taskbar of another screen (Shell_SecondaryTrayWnd); none: the main one.</param>
+    public TaskbarWidget(IntPtr secondaryTray = default)
     {
+        _secondaryTray = secondaryTray;
         InitializeComponent();
         _autoHideTimer.Tick += (_, _) => Place();
     }
+
+    /// <summary>The taskbar it sits on: the main one (found again after Explorer restarts), or that of another screen.</summary>
+    public IntPtr Tray => _secondaryTray != IntPtr.Zero ? _secondaryTray : FindWindow("Shell_TrayWnd", null);
+
+    public bool IsSecondary => _secondaryTray != IntPtr.Zero;
 
     protected override void OnSourceInitialized(EventArgs e)
     {
@@ -43,7 +52,7 @@ public partial class TaskbarWidget : Window
         SetWindowLongPtr(_hwnd, GWL_EXSTYLE, new IntPtr(style | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE));
         HwndSource.FromHwnd(_hwnd)?.AddHook(WndProc);
         KeepTransparent();
-        SetWindowLongPtr(_hwnd, GWLP_HWNDPARENT, FindWindow("Shell_TrayWnd", null));
+        SetWindowLongPtr(_hwnd, GWLP_HWNDPARENT, Tray);
 
         // An app bar that takes no room: Windows tells it when an app goes full screen on its screen.
         var data = new APPBARDATA { cbSize = Marshal.SizeOf<APPBARDATA>(), hWnd = _hwnd, uCallbackMessage = AppBarMessage };
@@ -155,8 +164,8 @@ public partial class TaskbarWidget : Window
         var abd = new APPBARDATA { cbSize = Marshal.SizeOf<APPBARDATA>() };
         autoHide = (SHAppBarMessage(ABM_GETSTATE, ref abd).ToInt64() & ABS_AUTOHIDE) != 0;
 
-        IntPtr tray = FindWindow("Shell_TrayWnd", null);
-        if (tray == IntPtr.Zero || !GetWindowRect(tray, out var bar) || bar.Width <= bar.Height)
+        IntPtr tray = Tray;
+        if (tray == IntPtr.Zero || !IsWindow(tray) || !GetWindowRect(tray, out var bar) || bar.Width <= bar.Height)
             return false; // no taskbar, or a vertical one (not on Windows 11)
 
         var monitor = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
@@ -186,11 +195,14 @@ public partial class TaskbarWidget : Window
         }
         if (nearClock)
         {
-            // Left of the notification area; Windows 11 still gives its rectangle. Else about where it is.
+            // Left of the notification area; Windows 11 still gives its rectangle. The taskbar of another screen has
+            // none: left of its clock, found with its buttons. Else about where it is.
             IntPtr notify = FindWindowEx(tray, IntPtr.Zero, "TrayNotifyWnd", null);
             int right = notify != IntPtr.Zero && GetWindowRect(notify, out var area) && area.Width > 0 && area.Left > bar.Left
                 ? area.Left
-                : bar.Right - (int)Math.Round(220 * scale);
+                : _clockLeft is int clock && clock > bar.Left + bar.Width / 2 && clock < bar.Right
+                    ? clock
+                    : bar.Right - (int)Math.Round(220 * scale);
             x = right - width - (int)Math.Round((8 + (style.Position == WidgetPosition.NearClock ? style.Offset : 0)) * scale);
         }
         x = Math.Max(bar.Left, x);
@@ -201,6 +213,7 @@ public partial class TaskbarWidget : Window
     // their own, found through UI Automation, away from the UI thread (Explorer may be slow to answer).
     private int? _widgetsRight;
     private int? _startLeft;
+    private int? _clockLeft;
     private bool _lookingForButtons;
     private bool _buttonsKnown;
 
@@ -221,15 +234,17 @@ public partial class TaskbarWidget : Window
         _lookingForButtons = true;
         Task.Run(() =>
         {
-            int? widgets = null, start = null;
+            int? widgets = null, start = null, clock = null;
             try
             {
-                IntPtr tray = FindWindow("Shell_TrayWnd", null);
+                IntPtr tray = Tray;
                 if (tray != IntPtr.Zero)
                 {
                     var root = System.Windows.Automation.AutomationElement.FromHandle(tray);
                     widgets = Edge(root, "WidgetsButton", right: true);
                     start = Edge(root, "StartButton", right: false);
+                    if (IsSecondary)
+                        clock = Edge(root, "SystemTrayIcon", right: false);
                 }
             }
             catch (Exception ex) when (ex is System.Windows.Automation.ElementNotAvailableException or InvalidOperationException or COMException or ArgumentException)
@@ -241,6 +256,7 @@ public partial class TaskbarWidget : Window
                 bool changed = !_buttonsKnown || (_widgetsRight is null) != (widgets is null);
                 _widgetsRight = widgets;
                 _startLeft = start;
+                _clockLeft = clock;
                 _buttonsKnown = true;
                 _lookingForButtons = false;
                 Place();
