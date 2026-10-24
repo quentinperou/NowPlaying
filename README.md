@@ -178,8 +178,9 @@ The generated files are committed: run it again only to change the design.
 
 Nothing you listen to leaves your computer. The overlay pages (when turned on) and the widget of the Widgets board get
 what plays from the app on `localhost` only: other devices on your network cannot reach it. For the spectrum, the sound of the PC is analyzed in memory while the bars are shown, never
-recorded nor sent. The only network access is the **update check** on GitHub (`api.github.com`), which can be turned
-off in **General**.
+recorded nor sent. The history of what played stays on this PC (it can be turned off). The only network access is the
+**update check** on GitHub (`api.github.com`), which can be turned off in **Updates**; the Microsoft Store version
+has none (the Store updates it).
 
 ## License
 

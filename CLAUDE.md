@@ -49,7 +49,8 @@ release with the installer.
 
 **Microsoft Store version, in progress** (October 24, 2026, evening, home PC; commit `7aea3e1`, pushed; asked by him: steps
 1 and 2 of the plan in `.local/claude/memory/project-store-plan.md`): he made his Partner Center account and reserved
-**"NowPlaying by QuentinPerou"** (Store ID `9N7FSJ3M6KGC`). The same exe runs from a full MSIX package
+**"NowPlaying by QuentinPerou"** (Store ID `9N7FSJ3M6KGC`), then also **"NowPlaying Widget"**, the name he kept for the Store
+(the package's `DisplayName`; the identity keeps the first name, the Start menu says "NowPlaying"). The same exe runs from a full MSIX package
 (`store/AppxManifest.xml`, the identity of Partner Center; `scripts/build-store.ps1`: self-contained, makepri,
 makeappx, 75 MB, not signed: the Store signs it) and finds it out at startup (`Services/AppPackage.cs`): start with
 Windows by the manifest's startup task (on from the first launch; turned off by the user in Task Manager, the card
@@ -328,7 +329,7 @@ one would show the desktop behind it) and the widget on a Windows 11 taskbar. Ma
 | `src/NowPlaying.Widgets` | The widget of the Windows Widgets board: a COM server (`Program`, `ClassFactory`, `WidgetProvider`) that Windows starts while the widget is on the board; `AppLink` (what plays from the app's local server, its buttons back), `Card` (Adaptive Card template and data), `Artwork` (the pictures: blurred background, rounded cover, icons). `package/`: the sparse package (manifest, logos, picker previews). Windows App SDK widgets component, self-contained. |
 | `tests/NowPlaying.Tests` | xUnit: Core, update feed, localization key parity. |
 | `installer/NowPlaying.iss` | Inno Setup (English/French), .NET 10 Desktop Runtime check, closes the running app, registers the Widgets package (Windows 11, `Add-AppxPackage -AllowUnsigned`; kept across updates, removed at uninstall). |
-| `store/` | The Microsoft Store package: `AppxManifest.xml` (identity of Partner Center, the app and its startup task, the widget provider) and `Assets/` (logos, by `make-icons.ps1`). |
+| `store/` | The Microsoft Store package: `AppxManifest.xml` (identity of Partner Center, the app and its startup task, the widget provider) `Assets/` (logos, by `make-icons.ps1`) and `listing.md` (what goes into Partner Center, English and French). |
 | `scripts/` | `build.ps1`, `build-store.ps1`, `make-icons.ps1`. |
 | `.github/workflows/build.yml` | Build + tests on push; release on a `v*` tag (pre-release when the tag has a `-`). |
 
@@ -481,8 +482,8 @@ English (default) and French, following the Windows display language or chosen i
 
 ## To do
 
-- [ ] Store version: the listing in Partner Center (English and French, screenshots, privacy policy, age
-      rating, the `runFullTrust` sentence), then the first submission by hand; later, maybe, the upload from GitHub
+- [ ] Store version: the listing in Partner Center (ready in `store/listing.md`), then the first submission by
+      hand; later, maybe, the upload from GitHub
       (plan, step 4). To check: the offer to uninstall the GitHub version (on the shop PC), the start at sign-in, the
       widget in the board.
 - [ ] The author tries 0.3.2 (installed on the shop PC): the Sources page with real players, the widget menus (and

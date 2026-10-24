@@ -188,8 +188,9 @@ tests vérifient que les deux ont les mêmes clés et les mêmes paramètres. Me
 Rien de ce que vous écoutez ne quitte votre ordinateur. Les pages de l'overlay (quand il est activé) et le widget du
 tableau Widgets reçoivent ce qui joue sur `localhost` uniquement : les autres appareils de votre réseau n'y ont pas
 accès. Pour le spectre, le son du PC est analysé en
-mémoire pendant que les barres sont affichées, jamais enregistré ni envoyé. Le seul accès réseau est la **recherche de
-mises à jour** sur GitHub (`api.github.com`), désactivable dans **Général**.
+mémoire pendant que les barres sont affichées, jamais enregistré ni envoyé. L'historique de ce qui a joué reste sur ce
+PC (il peut être désactivé). Le seul accès réseau est la **recherche de mises à jour** sur GitHub (`api.github.com`),
+désactivable dans **Mises à jour** ; la version Microsoft Store n'en a aucun (le Store la met à jour).
 
 ## Licence
 

@@ -3,8 +3,9 @@
   The Microsoft Store version of NowPlaying: a full MSIX package of the same app, built by scripts\build-store.ps1
   next to the installer of the GitHub version (which this package does not change).
 
-  Identity: the values of the product "NowPlaying by QuentinPerou" in Partner Center (Product identity page), reserved
-  on October 24, 2026. The package is not signed: the Store signs it when it publishes it.
+  Identity: the values of the product in Partner Center (Product identity page), reserved on October 24, 2026 as
+  "NowPlaying by QuentinPerou"; the name shown in the Store is "NowPlaying Widget", reserved the same evening (the
+  identity keeps the first name). The package is not signed: the Store signs it when it publishes it.
   Version: written by the build script from Directory.Build.props (0.3.2 gives 0.3.2.0, the Store wants the last
   number at 0).
 
@@ -30,7 +31,7 @@
     ProcessorArchitecture="x64" />
 
   <Properties>
-    <DisplayName>NowPlaying by QuentinPerou</DisplayName>
+    <DisplayName>NowPlaying Widget</DisplayName>
     <PublisherDisplayName>QuentinPerou</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
