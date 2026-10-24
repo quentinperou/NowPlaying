@@ -228,9 +228,13 @@ end;
   being the default, so that a reinstall finds them. A silent uninstall keeps them. }
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
-  { Before the files go: the package points at them. }
+  { Before the files go: the package points at them. The start with Windows (written by the app, not by Setup) goes
+    too: it would start an exe that is gone. }
   if CurUninstallStep = usUninstall then
+  begin
     UnregisterWidget;
+    RegDeleteValue(HKEY_CURRENT_USER, 'Software\Microsoft\Windows\CurrentVersion\Run', 'NowPlaying');
+  end;
   if (CurUninstallStep = usPostUninstall) and not UninstallSilent and
      (MsgBox(CustomMessage('DeleteUserData'), mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES) then
     DelTree(ExpandConstant('{localappdata}\NowPlaying'), True, True, True);

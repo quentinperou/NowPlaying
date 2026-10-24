@@ -43,6 +43,11 @@
   <data name="ButtonPrevious" xml:space="preserve">
     <value>Précédent</value>
   </data>
+  <data name="ClassicRemovalText" xml:space="preserve">
+    <value>NowPlaying est aussi installé depuis GitHub sur ce PC, et une seule version peut tourner à la fois. Désinstaller celle de GitHub ?
+
+NowPlaying se ferme pendant la désinstallation : relancez-le ensuite depuis le menu Démarrer.</value>
+  </data>
   <data name="Close" xml:space="preserve">
     <value>Fermer</value>
   </data>
@@ -229,6 +234,12 @@
   <data name="OpenInBrowser" xml:space="preserve">
     <value>Ouvrir</value>
   </data>
+  <data name="OpenStartupSettings" xml:space="preserve">
+    <value>Applications de démarrage</value>
+  </data>
+  <data name="OpenStore" xml:space="preserve">
+    <value>Ouvrir le Store</value>
+  </data>
   <data name="OpenTaskbarSettings" xml:space="preserve">
     <value>Paramètres de la barre des tâches</value>
   </data>
@@ -397,8 +408,14 @@
   <data name="StartWithWindows" xml:space="preserve">
     <value>Démarrer avec Windows</value>
   </data>
+  <data name="StartWithWindowsByPolicy" xml:space="preserve">
+    <value>Réglé par l&apos;administrateur de ce PC.</value>
+  </data>
   <data name="StartWithWindowsHint" xml:space="preserve">
     <value>Le widget et les overlays sont prêts dès l&apos;ouverture de session</value>
+  </data>
+  <data name="StartWithWindowsOffByUser" xml:space="preserve">
+    <value>Désactivé dans les applications de démarrage de Windows : réactivez-le là.</value>
   </data>
   <data name="StyleColor" xml:space="preserve">
     <value>Couleur</value>
@@ -528,6 +545,12 @@
   </data>
   <data name="UpdateWhatsNew" xml:space="preserve">
     <value>Nouveautés</value>
+  </data>
+  <data name="UpdatesByStore" xml:space="preserve">
+    <value>Les mises à jour viennent du Microsoft Store</value>
+  </data>
+  <data name="UpdatesByStoreHint" xml:space="preserve">
+    <value>Version {0} · le Store installe les nouvelles versions tout seul.</value>
   </data>
   <data name="VisualizerAnimation" xml:space="preserve">
     <value>Animation</value>

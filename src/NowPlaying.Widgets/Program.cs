@@ -8,8 +8,10 @@ namespace NowPlaying.Widgets;
 /// </summary>
 internal static class Program
 {
-    // The class of the provider: the same id as in package/AppxManifest.xml.
-    public static readonly Guid ProviderClassId = new("6E5961A8-95F5-4413-ADCB-B9BD8D1B3EDA");
+    // The class of the provider, as the package declares it: the version from GitHub (package/AppxManifest.xml) and
+    // the Store version (store/AppxManifest.xml) each have their own, so that both can be installed on one PC.
+    private static readonly Guid ClassicClassId = new("6E5961A8-95F5-4413-ADCB-B9BD8D1B3EDA");
+    private static readonly Guid StoreClassId = new("FD626078-0E6B-4C13-8494-3A132E92C261");
 
     private const uint ClsctxLocalServer = 0x4;
     private const uint RegclsMultipleUse = 0x1;
@@ -24,7 +26,8 @@ internal static class Program
 
         WinRT.ComWrappersSupport.InitializeComWrappers();
         var provider = new WidgetProvider(() => s_noMoreWidgets.Set());
-        int hr = CoRegisterClassObject(ProviderClassId, new ClassFactory(provider), ClsctxLocalServer, RegclsMultipleUse, out uint cookie);
+        var classId = AppLink.StoreAppId() is null ? ClassicClassId : StoreClassId;
+        int hr = CoRegisterClassObject(classId, new ClassFactory(provider), ClsctxLocalServer, RegclsMultipleUse, out uint cookie);
         if (hr != 0)
         {
             Log.Write($"CoRegisterClassObject failed: 0x{hr:X8}");

@@ -731,8 +731,7 @@ public partial class MainWindow : Window
         var page = new StackPanel();
         page.Children.Add(Ui.PageTitle(Strings.Get("PageGeneral")));
 
-        page.Children.Add(Ui.Card("", Strings.Get("StartWithWindows"), Strings.Get("StartWithWindowsHint"),
-            Ui.Toggle(WindowsSettings.StartWithWindows, on => WindowsSettings.StartWithWindows = on, Strings.Get("StartWithWindows"))));
+        page.Children.Add(StartupCard());
 
         page.Children.Add(Ui.Card("", Strings.Get("Language"), null,
             Ui.Choice(
@@ -763,6 +762,38 @@ public partial class MainWindow : Window
         return page;
     }
 
+    // Start with Windows: the Run key, or the startup task of the Store version. A startup task turned off by the user
+    // (Task Manager, Settings) can only be turned on again there: the card says so and opens the page.
+    private static Border StartupCard()
+    {
+        var description = Ui.Description(Strings.Get("StartWithWindowsHint"));
+        var texts = Ui.Texts(Strings.Get("StartWithWindows"));
+        texts.Children.Add(description);
+        var openSettings = Ui.Button(Strings.Get("OpenStartupSettings"), () => OpenUrl("ms-settings:startupapps"));
+        openSettings.Visibility = Visibility.Collapsed;
+        CheckBox? toggle = null;
+        void Show(StartupState state)
+        {
+            Ui.ShowToggle(toggle!, state == StartupState.On);
+            toggle!.IsEnabled = state is StartupState.On or StartupState.Off;
+            openSettings.Visibility = state == StartupState.OffByUser ? Visibility.Visible : Visibility.Collapsed;
+            description.Text = Strings.Get(state switch
+            {
+                StartupState.OffByUser => "StartWithWindowsOffByUser",
+                StartupState.ByPolicy => "StartWithWindowsByPolicy",
+                _ => "StartWithWindowsHint",
+            });
+        }
+        toggle = Ui.Toggle(false, async on => Show(await WindowsSettings.SetStartupAsync(on)), Strings.Get("StartWithWindows"));
+        var controls = new StackPanel { Orientation = Orientation.Horizontal };
+        controls.Children.Add(openSettings);
+        controls.Children.Add(Spaced(toggle));
+        // The Run key is read at once; the startup task a moment later.
+        async void Load() => Show(await WindowsSettings.GetStartupAsync());
+        Load();
+        return new Border { Style = (Style)Application.Current.FindResource("Card"), Child = Ui.Row("", texts, controls) };
+    }
+
     // ---------------------------------------------------------------- Updates page
 
     // As in ScreenClip and PageCompose: one card, the state and the check / install button first, then the check at
@@ -778,6 +809,14 @@ public partial class MainWindow : Window
         var settings = App.Settings;
         var page = new StackPanel();
         page.Children.Add(Ui.PageTitle(Strings.Get("PageUpdates")));
+
+        // The Store version: the Store updates it (an app from the Store may not install its own updates).
+        if (AppPackage.IsPackaged)
+        {
+            page.Children.Add(Ui.Card("", Strings.Get("UpdatesByStore"), Strings.Format("UpdatesByStoreHint", Updater.CurrentVersion),
+                Ui.Button(Strings.Get("OpenStore"), () => OpenUrl(AppPackage.StorePage))));
+            return page;
+        }
 
         _updateStatus = Ui.Description("");
         _updateNotes = Ui.Description("");

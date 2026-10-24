@@ -58,13 +58,6 @@ public partial class App : Application
             return;
         }
 
-        _instance = SingleInstance.TryStart(e.Args, _ => Dispatcher.BeginInvoke(() => OpenMainWindow()));
-        if (_instance is null)
-        {
-            Shutdown(); // already running: it has been told to open its window
-            return;
-        }
-
         Settings = AppSettings.Load();
 
         // UI language: the one chosen in the settings, else the Windows one (French, otherwise English).
@@ -73,6 +66,20 @@ public partial class App : Application
             ApplyLanguage(forced);
         else
             ApplyLanguage(Settings.Language);
+
+        // Before the single instance: the version from GitHub may be the one running.
+        if (OfferClassicRemoval())
+        {
+            Shutdown();
+            return;
+        }
+
+        _instance = SingleInstance.TryStart(e.Args, _ => Dispatcher.BeginInvoke(() => OpenMainWindow()));
+        if (_instance is null)
+        {
+            Shutdown(); // already running: it has been told to open its window
+            return;
+        }
 
         DispatcherUnhandledException += (_, args) =>
         {
@@ -127,11 +134,28 @@ public partial class App : Application
             Settings.Save();
         }
 
-        if (!e.Args.Contains(BackgroundArgument))
+        if (!e.Args.Contains(BackgroundArgument) && !AppPackage.LaunchedAtStartup())
             OpenMainWindow();
 
         _ = Updater.CheckAtStartupAsync();
         MemoryTrim.Soon();
+    }
+
+    /// <summary>
+    /// The Store version, the first time it finds the version installed from GitHub on the PC: only one NowPlaying runs
+    /// at a time, so it offers to uninstall that one (asked once). True when the uninstaller has been started: it closes
+    /// every NowPlaying, so this one quits.
+    /// </summary>
+    private static bool OfferClassicRemoval()
+    {
+        if (!AppPackage.IsPackaged || Settings.ClassicRemovalOffered || AppPackage.ClassicUninstaller() is not { } uninstaller)
+            return false;
+        Settings.ClassicRemovalOffered = true;
+        Settings.Save();
+        if (MessageBox.Show(Strings.Get("ClassicRemovalText"), "NowPlaying", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+            return false;
+        AppPackage.StartClassicUninstall(uninstaller);
+        return true;
     }
 
     protected override void OnExit(ExitEventArgs e)

@@ -41,8 +41,34 @@ the whole window once read 32 %: let the window rest before measuring.
 
 **Git**: commits only in the author's name (repository-local identity `QuentinPerou`, his GitHub noreply address),
 **no `Co-Authored-By` line**. **Never push** without his explicit OK: he pushes from his own PC.
+Remote `origin`: the public `github.com/quentinperou/NowPlaying`. A version goes out as `main`, then its tag alone
+(`git push origin vX.Y.Z`: the tags are lightweight, `--follow-tags` skips them); the tag's workflow publishes the
+release with the installer.
 
-## Project status (October 21, 2026)
+## Project status (October 24, 2026)
+
+**Microsoft Store version, in progress** (October 24, 2026, evening, home PC; **not committed**, asked by him: steps
+1 and 2 of the plan in `.local/claude/memory/project-store-plan.md`): he made his Partner Center account and reserved
+**"NowPlaying by QuentinPerou"** (Store ID `9N7FSJ3M6KGC`). The same exe runs from a full MSIX package
+(`store/AppxManifest.xml`, the identity of Partner Center; `scripts/build-store.ps1`: self-contained, makepri,
+makeappx, 75 MB, not signed: the Store signs it) and finds it out at startup (`Services/AppPackage.cs`): start with
+Windows by the manifest's startup task (on from the first launch; turned off by the user in Task Manager, the card
+says so and opens `ms-settings:startupapps`), no GitHub update (the Updates page sends to the Store), the Widgets
+board provider with a class id of its own (both versions can be installed) and NowPlaying started by its app id.
+His choices: the Store version offers once to uninstall the GitHub version (its uninstaller through Explorer, out of
+the package; it closes every NowPlaying), automatic upload to the Store "after the first one", x64 only, versions
+x.y.z.0. The installer now also removes the Run value at uninstall. Checked on his home PC (no other NowPlaying
+there): registered from `dist/store/layout` (Developer Mode), started by its app id, both processes with the
+package's identity (`tasklist /apps`), the startup task on, turned off and on again from the General page (UI
+Automation, its state read in the registry), the Updates page, the local server, 0.2 % of one core and 14 + 25 MB
+at rest; the data went to the package's own folder and left with it. Not checked: the start at sign-in, the offer
+to uninstall the GitHub version (no GitHub version on that PC), the widget in the board from the Store package, the
+Windows App Certification Kit (needs administrator rights).
+
+**On GitHub** (October 24, 2026, evening, from his home PC): the repository `quentinperou/NowPlaying` is public (he
+published `main` from VS Code: Claude Code's auto mode refused `gh repo create`); the nine tags are pushed, and one
+release only, **v0.3.2** (`NowPlaying-Setup-0.3.2.exe`, 7.3 MB, made by the workflow, as he chose): the eight older
+tags went in one push, which runs no workflow.
 
 **Version 0.3.2** (October 24, 2026; installed on the shop PC over 0.3.1 at his request, silently, settings kept;
 committed with tag `v0.3.2`, not pushed): the **real spectrum listens to the player
@@ -232,6 +258,7 @@ the whole app (`.local/maquettes/maquette.html`, followed for the UI):
 
 ```powershell
 .\scripts\build.ps1                       # tests + dist\app (ReadyToRun) + dist\NowPlaying.Widgets.msix + installer
+.\scripts\build-store.ps1                 # tests + dist\store\NowPlaying_<version>.0_x64.msix (the Store version)
 dotnet test tests\NowPlaying.Tests        # unit tests (Core + localization)
 dotnet run --project src\NowPlaying       # run (opens the window; --background opens nothing)
 powershell -File scripts\make-icons.ps1   # regenerate the icons (Windows PowerShell 5.1)
@@ -239,6 +266,10 @@ powershell -File scripts\make-icons.ps1   # regenerate the icons (Windows PowerS
 
 Environment variables: `NOWPLAYING_LANG=en|fr`, `NOWPLAYING_THEME=Light|Dark`, `NOWPLAYING_WIDGET_STATE=hover|volume`
 (the widget stays in that state: pictures, tests). Settings live in `%LOCALAPPDATA%\NowPlaying\settings.json`.
+
+The Store version in development: `Add-AppxPackage -Register dist\store\layout\AppxManifest.xml` (Developer Mode;
+quit any other NowPlaying first), started by `explorer shell:AppsFolder\QuentinPerou.NowPlayingbyQuentinPerou_fjkgknmb0dzkr!App`;
+removed by `Get-AppxPackage QuentinPerou.NowPlayingbyQuentinPerou | Remove-AppxPackage` (its data goes with it).
 
 The Widgets board widget in development: register a copy of `src\NowPlaying.Widgets\package` whose manifest has
 `Publisher="CN=NowPlaying"` (a loose registration refuses the unsigned OID) and a higher version, with
@@ -288,11 +319,12 @@ one would show the desktop behind it) and the widget on a Windows 11 taskbar. Ma
 | Folder | Role |
 |--------|------|
 | `src/NowPlaying.Core` | Pure, tested logic: `SourcePicker` (which player to show, the rules of the Sources page), `PlayHistory` (the tracks heard), `TrackText` (a track as one line), `Timeline` (position between reports, "3:34"), `DominantColor` (color of a cover, readable under white text), `SpectrumAnalyzer` (Hann + FFT + log bands + smoothing) and `DecorativeBars`, `Styles` (`WidgetStyle`, `OverlayStyle`, enums, ranges), `SurfaceColors` (background / text / track from a style), `Rgb`, `AppIdentity` (player names, process matching), `SemanticVersion`, `UpdateFeed`. |
-| `src/NowPlaying` | WPF .NET 10. `App` (single instance, tray, widgets, overlay, commands; `--taskbar`: the widget process), `TaskbarWidget` (the window over the taskbar, in the widget process), `FloatingWidget` + `FloatingGlass` (its blur) + `FloatingShadow`, `MainWindow` (pages built in code), `PopupMenu` + `Menus.xaml` (tray and widget menus), `UpdateBar`, `Localization.cs`; `Controls/`: `WidgetView` (the widget, also the previews), `BarsView`, `OverlayPreview`, `StyleEditor`, `Ui` (cards, `Segmented`); `Services/`: `MediaSessions`, `AppNames`, `AppVolume`, `PlayerWindow`, `HistoryStore`, `TrackFile`, `AudioSpectrum`, `OverlayServer`, `TaskbarHost` (app side) + `TaskbarClient` (widget process) + `TaskbarLink` (`LineChannel`, the messages), `SeeThrough`, `TrayHost`, `AppSettings`, `WindowsSettings`, `SingleInstance`, `MicaBackdrop`, `MemoryTrim`, `Updater`, `NativeMethods`; `Overlay/`: the overlay page (HTML, CSS, JS, embedded). |
+| `src/NowPlaying` | WPF .NET 10. `App` (single instance, tray, widgets, overlay, commands; `--taskbar`: the widget process), `TaskbarWidget` (the window over the taskbar, in the widget process), `FloatingWidget` + `FloatingGlass` (its blur) + `FloatingShadow`, `MainWindow` (pages built in code), `PopupMenu` + `Menus.xaml` (tray and widget menus), `UpdateBar`, `Localization.cs`; `Controls/`: `WidgetView` (the widget, also the previews), `BarsView`, `OverlayPreview`, `StyleEditor`, `Ui` (cards, `Segmented`); `Services/`: `MediaSessions`, `AppNames`, `AppVolume`, `PlayerWindow`, `HistoryStore`, `TrackFile`, `AudioSpectrum`, `OverlayServer`, `TaskbarHost` (app side) + `TaskbarClient` (widget process) + `TaskbarLink` (`LineChannel`, the messages), `SeeThrough`, `TrayHost`, `AppSettings`, `WindowsSettings`, `AppPackage` (the Store version), `SingleInstance`, `MicaBackdrop`, `MemoryTrim`, `Updater`, `NativeMethods`; `Overlay/`: the overlay page (HTML, CSS, JS, embedded). |
 | `src/NowPlaying.Widgets` | The widget of the Windows Widgets board: a COM server (`Program`, `ClassFactory`, `WidgetProvider`) that Windows starts while the widget is on the board; `AppLink` (what plays from the app's local server, its buttons back), `Card` (Adaptive Card template and data), `Artwork` (the pictures: blurred background, rounded cover, icons). `package/`: the sparse package (manifest, logos, picker previews). Windows App SDK widgets component, self-contained. |
 | `tests/NowPlaying.Tests` | xUnit: Core, update feed, localization key parity. |
 | `installer/NowPlaying.iss` | Inno Setup (English/French), .NET 10 Desktop Runtime check, closes the running app, registers the Widgets package (Windows 11, `Add-AppxPackage -AllowUnsigned`; kept across updates, removed at uninstall). |
-| `scripts/` | `build.ps1`, `make-icons.ps1`. |
+| `store/` | The Microsoft Store package: `AppxManifest.xml` (identity of Partner Center, the app and its startup task, the widget provider) and `Assets/` (logos, by `make-icons.ps1`). |
+| `scripts/` | `build.ps1`, `build-store.ps1`, `make-icons.ps1`. |
 | `.github/workflows/build.yml` | Build + tests on push; release on a `v*` tag (pre-release when the tag has a `-`). |
 
 ### Technical choices (and why)
@@ -362,6 +394,12 @@ one would show the desktop behind it) and the widget on a Windows 11 taskbar. Ma
   "Glass" is only a veil: a Browser Source is drawn alone, it cannot blur the scene behind it.
 - **Same stack as the sister projects**: WPF .NET 10 Fluent theme, Mica, resx EN/FR, settings JSON applied at once
   (saved 600 ms after the last change), Inno Setup, updater from GitHub Releases.
+- **Store version**: one code, one exe; `AppPackage.IsPackaged` (`GetCurrentPackageFullName`) changes the start
+  with Windows (a package's HKCU writes go to its own copy, never read at sign-in: the `windows.startupTask` of the
+  manifest and the `StartupTask` API; launched by it, `ActivationKind.StartupTask`, it opens no window), the updates
+  (none: the Store forbids it) and, in the widget, how NowPlaying is started (`shell:AppsFolder\<family>!App`). Only
+  `runFullTrust`: no `unvirtualizedResources` (meant for some games and sparse packages). In the package, a file of
+  `%LOCALAPPDATA%` that does not exist yet is written to the package's folder (`Packages\<family>\LocalCache`).
 
 ### Localization
 
@@ -426,12 +464,19 @@ English (default) and French, following the Windows display language or chosen i
   overlay page (hide after a few seconds) uses a timer.
 - To see a menu without the mouse: post the tray icon's callback (`WM_APP + 1`, lParam `WM_CONTEXTMENU`) to the
   hidden "NowPlaying" window, picture the popup's rectangle, post it again to close the menu.
+- GitHub creates no push event for more than three tags pushed at once: no workflow, no release. Push a version's
+  tag alone.
+- `makepri createconfig` puts each scale in a PRI file of its own (`<packaging>`, meant for a bundle): in a single
+  MSIX the scale-200 logos would be lost; `build-store.ps1` removes that section. Run makepri from PowerShell: Git
+  Bash turns its `/cf` options into paths.
 
 ## To do
 
-- [ ] The author pushes from home: the repository has no remote yet (the GitHub repository `quentinperou/NowPlaying`
-      is to be created), nine commits and nine lightweight tags (`v0.1.3`, `v0.2.0` to `v0.2.4`, `v0.3.0` to
-      `v0.3.2`) wait. Each `v*` tag pushed makes a GitHub release (the workflow).
+- [ ] Store version: commit it (with the CLAUDE.md of the GitHub push); the Windows App Certification Kit on the
+      MSIX (as administrator); the listing in Partner Center (English and French, screenshots, privacy policy, age
+      rating, the `runFullTrust` sentence), then the first submission by hand; later, maybe, the upload from GitHub
+      (plan, step 4). To check: the offer to uninstall the GitHub version (on the shop PC), the start at sign-in, the
+      widget in the board.
 - [ ] The author tries 0.3.2 (installed on the shop PC): the Sources page with real players, the widget menus (and
       "Copy title – artist"), the click on the cover, the drag of the floating widget, OBS itself (the overlay on each
       new track, the text file), Spotify, a real live stream in the widget.

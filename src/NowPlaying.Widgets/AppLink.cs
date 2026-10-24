@@ -65,10 +65,34 @@ internal sealed class AppLink : IDisposable
     /// <summary>Starts NowPlaying (installed next to this exe).</summary>
     public static void StartApp()
     {
+        // The Store version: NowPlaying is an app of this same package, started by its id so that it runs as the
+        // package's app (its startup task, its updates).
+        if (StoreAppId() is { } appId)
+        {
+            Process.Start(new ProcessStartInfo("explorer.exe", $"shell:AppsFolder\\{appId}") { UseShellExecute = false });
+            return;
+        }
         string exe = Path.Combine(AppContext.BaseDirectory, "NowPlaying.exe");
         // Through File Explorer: started by this process, the app would run with the identity of the widget's package.
         if (File.Exists(exe))
             Process.Start(new ProcessStartInfo("explorer.exe", $"\"{exe}\"") { UseShellExecute = false });
+    }
+
+    /// <summary>
+    /// The id of NowPlaying in the Store package (store\AppxManifest.xml); null for the version installed from GitHub,
+    /// whose package (sparse, package\AppxManifest.xml) holds the widget only.
+    /// </summary>
+    public static string? StoreAppId()
+    {
+        try
+        {
+            var id = Windows.ApplicationModel.Package.Current.Id;
+            return id.Name == "NowPlaying.Widgets" ? null : $"{id.FamilyName}!App";
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
     }
 
     private async Task Listen()

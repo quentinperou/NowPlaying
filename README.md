@@ -111,7 +111,7 @@ To uninstall: **Settings → Apps → Installed apps → NowPlaying**.
 |------|---------|---------|
 | **Git** | Get the code | `winget install Git.Git` |
 | **.NET 10 SDK** | Build the app (C# / WPF) and run the tests | `winget install Microsoft.DotNet.SDK.10` |
-| **Windows SDK** | `makeappx`, to pack the package of the Widgets board | `winget install Microsoft.WindowsSDK.10.0.26100` |
+| **Windows SDK** | `makeappx` and `makepri`, to pack the packages (Widgets board, Store version) | `winget install Microsoft.WindowsSDK.10.0.26100` |
 | **Inno Setup 6** | Build the installer | `winget install JRSoftware.InnoSetup` |
 
 ### Build
@@ -123,6 +123,13 @@ To uninstall: **Settings → Apps → Installed apps → NowPlaying**.
 The script runs the tests, then writes `dist\app\` (the app and the widget of the Widgets board, framework-dependent,
 ReadyToRun), `dist\NowPlaying.Widgets.msix` and `dist\NowPlaying-Setup-<version>.exe`. Options: `-SkipTests`,
 `-NoInstaller`.
+
+```powershell
+.\scripts\build-store.ps1
+```
+
+The Microsoft Store version: `dist\store\NowPlaying_<version>.0_x64.msix`, the same app with .NET inside, not signed
+(the Store signs it). In it, the start with Windows is a startup task and the Store installs the updates.
 
 ### While developing
 
@@ -146,7 +153,8 @@ src/
                      (Overlay/), the app window, updates
   NowPlaying.Widgets/ The widget of the Windows Widgets board (started by Windows) and its package (package/)
 installer/           Inno Setup script
-scripts/             build.ps1, make-icons.ps1
+store/               Manifest and logos of the Microsoft Store package
+scripts/             build.ps1, build-store.ps1, make-icons.ps1
 tests/               Unit tests (xUnit)
 ```
 

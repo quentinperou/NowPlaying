@@ -95,6 +95,9 @@ public sealed class AppSettings
     /// </summary>
     public bool StartupConfigured { get; set; }
 
+    /// <summary>The Store version has offered once to uninstall the version installed from GitHub.</summary>
+    public bool ClassicRemovalOffered { get; set; }
+
     /// <summary>Ask GitHub for a newer version when the app starts.</summary>
     public bool CheckForUpdatesAtStartup { get; set; } = true;
 

@@ -9,7 +9,22 @@ internal static class WindowsSettings
     private const string RunValue = "NowPlaying";
     private const string PersonalizeKey = @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
 
-    /// <summary>NowPlaying starts, in the notification area, when the user signs in (HKCU Run key).</summary>
+    /// <summary>Whether NowPlaying starts with Windows: the Run key, or the startup task of the Store version.</summary>
+    public static Task<StartupState> GetStartupAsync() =>
+        AppPackage.IsPackaged ? AppPackage.GetStartupAsync() : Task.FromResult(StartWithWindows ? StartupState.On : StartupState.Off);
+
+    public static Task<StartupState> SetStartupAsync(bool on)
+    {
+        if (AppPackage.IsPackaged)
+            return AppPackage.SetStartupAsync(on);
+        StartWithWindows = on;
+        return GetStartupAsync();
+    }
+
+    /// <summary>
+    /// NowPlaying starts, in the notification area, when the user signs in (HKCU Run key). Not in the Store version:
+    /// a package writes its own copy of HKCU, which Windows never reads at sign-in.
+    /// </summary>
     public static bool StartWithWindows
     {
         get
@@ -34,11 +49,12 @@ internal static class WindowsSettings
     }
 
     /// <summary>
-    /// True when this exe is the installed one (Program Files): only then is the start with Windows turned on by
-    /// default. A development build never registers itself.
+    /// True when this exe is the one installed from GitHub (Program Files): only then is the start with Windows turned
+    /// on by default. A development build never registers itself; the Store version has its startup task.
     /// </summary>
     public static bool IsInstalled =>
-        Environment.ProcessPath is { } exe
+        !AppPackage.IsPackaged
+        && Environment.ProcessPath is { } exe
         && exe.StartsWith(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), StringComparison.OrdinalIgnoreCase);
 
     /// <summary>The taskbar (and Start) is dark: "Choose your mode" of Windows, the Windows part (dark by default).</summary>

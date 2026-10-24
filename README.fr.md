@@ -118,7 +118,7 @@ Désinstaller : **Paramètres → Applications → Applications installées → 
 |-------|------|--------------|
 | **Git** | Récupérer le code | `winget install Git.Git` |
 | **.NET 10 SDK** | Compiler l'application (C# / WPF) et lancer les tests | `winget install Microsoft.DotNet.SDK.10` |
-| **Windows SDK** | `makeappx`, pour le paquet du tableau Widgets | `winget install Microsoft.WindowsSDK.10.0.26100` |
+| **Windows SDK** | `makeappx` et `makepri`, pour les paquets (tableau Widgets, version Store) | `winget install Microsoft.WindowsSDK.10.0.26100` |
 | **Inno Setup 6** | Construire l'installeur | `winget install JRSoftware.InnoSetup` |
 
 ### Compiler
@@ -130,6 +130,14 @@ Désinstaller : **Paramètres → Applications → Applications installées → 
 Le script lance les tests, puis écrit `dist\app\` (l'application et le widget du tableau Widgets, dépendants du
 runtime, ReadyToRun), `dist\NowPlaying.Widgets.msix` et `dist\NowPlaying-Setup-<version>.exe`. Options :
 `-SkipTests`, `-NoInstaller`.
+
+```powershell
+.\scripts\build-store.ps1
+```
+
+La version Microsoft Store : `dist\store\NowPlaying_<version>.0_x64.msix`, la même application avec .NET dedans,
+non signée (le Store la signe). Le démarrage avec Windows y passe par une tâche de démarrage, et le Store installe
+les mises à jour.
 
 ### Pendant le développement
 
@@ -153,7 +161,8 @@ src/
                      et les pages de l'overlay (Overlay/), la fenêtre de l'application, les mises à jour
   NowPlaying.Widgets/ Le widget du tableau Widgets de Windows (lancé par Windows) et son paquet (package/)
 installer/           Script Inno Setup
-scripts/             build.ps1, make-icons.ps1
+store/               Manifeste et logos du paquet Microsoft Store
+scripts/             build.ps1, build-store.ps1, make-icons.ps1
 tests/               Tests unitaires (xUnit)
 ```
 

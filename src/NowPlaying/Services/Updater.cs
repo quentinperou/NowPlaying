@@ -52,9 +52,14 @@ public static class Updater
         return Available;
     }
 
-    /// <summary>Background check when the app starts: a failure (offline, rate limit) only means no offer.</summary>
+    /// <summary>
+    /// Background check when the app starts: a failure (offline, rate limit) only means no offer. Never in the Store
+    /// version: the Store updates it, and forbids an app to install its own updates.
+    /// </summary>
     public static async Task CheckAtStartupAsync()
     {
+        if (AppPackage.IsPackaged)
+            return;
         DeleteOldDownloads();
         var settings = App.Settings;
         if (!settings.CheckForUpdatesAtStartup)

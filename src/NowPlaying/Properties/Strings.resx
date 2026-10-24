@@ -43,6 +43,11 @@
   <data name="ButtonPrevious" xml:space="preserve">
     <value>Previous</value>
   </data>
+  <data name="ClassicRemovalText" xml:space="preserve">
+    <value>NowPlaying is also installed from GitHub on this PC, and only one can run at a time. Uninstall the GitHub version?
+
+NowPlaying closes during the uninstall: start it again from the Start menu.</value>
+  </data>
   <data name="Close" xml:space="preserve">
     <value>Close</value>
   </data>
@@ -229,6 +234,12 @@
   <data name="OpenInBrowser" xml:space="preserve">
     <value>Open</value>
   </data>
+  <data name="OpenStartupSettings" xml:space="preserve">
+    <value>Startup apps</value>
+  </data>
+  <data name="OpenStore" xml:space="preserve">
+    <value>Open the Store</value>
+  </data>
   <data name="OpenTaskbarSettings" xml:space="preserve">
     <value>Taskbar settings</value>
   </data>
@@ -397,8 +408,14 @@
   <data name="StartWithWindows" xml:space="preserve">
     <value>Start with Windows</value>
   </data>
+  <data name="StartWithWindowsByPolicy" xml:space="preserve">
+    <value>Set by the administrator of this PC.</value>
+  </data>
   <data name="StartWithWindowsHint" xml:space="preserve">
     <value>The widget and the overlays are ready as soon as you sign in</value>
+  </data>
+  <data name="StartWithWindowsOffByUser" xml:space="preserve">
+    <value>Turned off in Windows&apos; startup apps: turn it on again there.</value>
   </data>
   <data name="StyleColor" xml:space="preserve">
     <value>Color</value>
@@ -528,6 +545,12 @@
   </data>
   <data name="UpdateWhatsNew" xml:space="preserve">
     <value>What&apos;s new</value>
+  </data>
+  <data name="UpdatesByStore" xml:space="preserve">
+    <value>Updates come from the Microsoft Store</value>
+  </data>
+  <data name="UpdatesByStoreHint" xml:space="preserve">
+    <value>Version {0} · the Store installs new versions by itself.</value>
   </data>
   <data name="VisualizerAnimation" xml:space="preserve">
     <value>Animation</value>

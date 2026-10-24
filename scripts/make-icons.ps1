@@ -188,3 +188,17 @@ Save-Png 50 (Join-Path $package 'StoreLogo.png')
 Save-Png 44 (Join-Path $package 'Square44x44Logo.png')
 Save-Png 150 (Join-Path $package 'Square150x150Logo.png')
 Save-Png 256 (Join-Path $package 'Widget.png')
+# Logos of the Store package (store\AppxManifest.xml, scripts\build-store.ps1). Windows picks the size it needs: a
+# scale for the Start menu and the Store, a target size for the taskbar and File Explorer ("unplated": the icon as it
+# is, on no colored plate).
+$store = Join-Path $root 'store\Assets'
+New-Item -ItemType Directory -Force $store | Out-Null
+foreach ($scale in 100, 200) {
+    Save-Png (50 * $scale / 100) (Join-Path $store "StoreLogo.scale-$scale.png")
+    Save-Png (44 * $scale / 100) (Join-Path $store "Square44x44Logo.scale-$scale.png")
+    Save-Png (150 * $scale / 100) (Join-Path $store "Square150x150Logo.scale-$scale.png")
+}
+foreach ($size in 16, 20, 24, 30, 32, 36, 40, 48, 64, 256) {
+    Save-Png $size (Join-Path $store "Square44x44Logo.targetsize-$size.png")
+    Save-Png $size (Join-Path $store "Square44x44Logo.targetsize-$($size)_altform-unplated.png")
+}
