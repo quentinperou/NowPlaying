@@ -140,9 +140,43 @@ public partial class App : Application
 
     // ---------------------------------------------------------------- What plays
 
+    // YouTube in Chrome ends its media session with each video and opens another one a moment later: what played stays
+    // shown that long (the author: "lui laisser le bénéfice du doute quelques secondes"), rather than the widgets and
+    // the overlay vanishing and coming back. A timer only for those few seconds.
+    private static readonly TimeSpan Grace = TimeSpan.FromSeconds(4);
+    private static DispatcherTimer? s_graceTimer;
+    private static MediaSnapshot? s_graceMedia;
+    private static bool s_graceUsed;
+
+    /// <summary>What the widgets and the overlay show: the player's track, or for a few seconds the one that just ended.</summary>
+    internal static MediaSnapshot? ShownMedia => Media.Current ?? s_graceMedia;
+
     private static void MediaChanged()
     {
-        var media = Media.Current;
+        if (Media.Current is not null)
+        {
+            s_graceTimer?.Stop();
+            s_graceMedia = null;
+            s_graceUsed = false;
+        }
+        else if (s_lastMedia is not null && s_graceMedia is null && !s_graceUsed)
+        {
+            s_graceMedia = s_lastMedia;
+            s_graceUsed = true;
+            if (s_graceTimer is null)
+            {
+                s_graceTimer = new DispatcherTimer { Interval = Grace };
+                s_graceTimer.Tick += (_, _) =>
+                {
+                    s_graceTimer.Stop();
+                    s_graceMedia = null;
+                    MediaChanged();
+                };
+            }
+            s_graceTimer.Start();
+        }
+
+        var media = ShownMedia;
         // The players seen, listed on the Sources page (also while they are closed).
         if (Settings.RememberPlayers(Media.Players.Select(p => (p.AppId, p.AppName))))
             SaveSoon();
@@ -160,7 +194,7 @@ public partial class App : Application
     /// </summary>
     internal static void RefreshWidget()
     {
-        var media = Media.Current;
+        var media = ShownMedia;
         // Nothing known to Windows: hidden, or the last track greyed if the user asked to keep it.
         if (media is not null)
             s_lastMedia = media;
@@ -220,7 +254,7 @@ public partial class App : Application
         Floating.BackdropChanged += (_, _) =>
         {
             ShowBehindFloating();
-            if (FloatingColors(Settings.Floating, (Media.Current ?? s_lastMedia)?.CoverColor, Floating.Backdrop) != s_floatingColors)
+            if (FloatingColors(Settings.Floating, (ShownMedia ?? s_lastMedia)?.CoverColor, Floating.Backdrop) != s_floatingColors)
                 RefreshWidget();
         };
         Floating.View.MenuRequested += (_, _) => PopupMenu.ShowFloating();
@@ -248,7 +282,7 @@ public partial class App : Application
     {
         var bar = Settings.OverlayBar;
         bool needed = Overlay.HasClients(OverlayLayout.Bar) && bar.ShowVisualizer && bar.Visualizer == VisualizerMode.Spectrum
-            && Media.Current is { IsPlaying: true };
+            && ShownMedia is { IsPlaying: true };
         if (needed && s_levelsTimer is not { IsEnabled: true })
         {
             if (s_levelsTimer is null)
@@ -303,7 +337,7 @@ public partial class App : Application
     /// <summary>A style changed in the window: shown at once everywhere, saved a moment later.</summary>
     internal static void ApplyStyles(bool save = true)
     {
-        var media = Media.Current;
+        var media = ShownMedia;
         RefreshWidget();
         Overlay.UpdateStyle(OverlayLayout.Bar, Settings.OverlayBar, media?.CoverColor);
         Overlay.UpdateStyle(OverlayLayout.Card, Settings.OverlayCard, media?.CoverColor);

@@ -40,6 +40,15 @@ plays: alternate the builds, several times, before concluding. The floating widg
 
 ## Project status (October 21, 2026)
 
+**Version 0.2.3** (October 24, 2026; installed on the shop PC over 0.2.2 at his request, silently, settings kept;
+committed with tag `v0.2.3`, not pushed): on a YouTube playlist in Chrome the widget
+vanished and came back at each new video (Chrome ends its media session with the video and opens another one): what
+played now stays shown 4 s (`App.ShownMedia`, a one-shot timer only then), for the widgets, the overlay and the window.
+Checked: the fake player ended, the widget stayed 4 s, then hid. He also found previous / next not working on that
+playlist: Windows' own flyout greyed them too, so Chrome declared them unavailable at that moment; a minute later
+Chrome declared both available (`.local\cs\sessions.cs` now prints the buttons). The widget follows what Chrome
+declares; nothing more to do from the app.
+
 **Version 0.2.2** (October 22, 2026; installed on the shop PC over 0.2.1 at his request, silently, settings kept,
 the Widgets package kept; he found it "ok"; committed with tag `v0.2.2`, not pushed), all asked by the author while
 trying 0.2.1. He found the visualizer setting
@@ -353,6 +362,8 @@ English (default) and French, following the Windows display language or chosen i
   sites it tells no timeline at all (length and position 0): never judge "live" from `Timeline.Extrapolate`, which
   goes on from 0. `dotnet run .local\cs\sessions.cs` prints each session's timeline.
 - A browser gives Windows one media session (its last audible tab): two tabs of one browser are never two players.
+- YouTube in Chrome: the session ends with each video and a new one opens a moment later (hence `App.ShownMedia`);
+  previous / next are what the page declares, sometimes unavailable for a while (Windows' flyout greys them too).
 - The window changes the style objects of the settings in place, and the floating widget and the previews keep those
   same objects: a view cannot find a change by comparing the new style with the one it keeps. Follow what the style
   asks at each update instead (`WidgetView.HoldSpectrum`). The taskbar widget gets a copy through the pipe.
@@ -364,9 +375,10 @@ English (default) and French, following the Windows display language or chosen i
 ## To do
 
 - [ ] The author pushes from home: the repository has no remote yet (the GitHub repository `quentinperou/NowPlaying`
-      is to be created), three commits and three lightweight tags (`v0.1.3`, `v0.2.0`, `v0.2.1`) wait. Each `v*` tag
+      is to be created), five commits and five lightweight tags (`v0.1.3`, `v0.2.0` to `v0.2.3`) wait. Each `v*` tag
       pushed makes a GitHub release (the workflow).
-- [ ] The author tries 0.2.1 (installed on the shop PC): the Sources page with real players, the widget menus, the
+- [ ] The author tries 0.2.3 (installed on the shop PC): the Sources page with real players, the widget menus, the
       drag of the floating widget, OBS itself, Spotify, a real live stream in the widget.
+- [ ] With the window open on the Floating widget page, the Debug build used about 32 % of one core: look into it.
 - [ ] Later: like (Spotify), the taskbars of the other screens, spectrum of the player only (process loopback of
       Windows 11).

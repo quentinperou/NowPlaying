@@ -793,7 +793,7 @@ public partial class MainWindow : Window
 
     private void MediaChanged(object? sender, EventArgs e)
     {
-        var media = App.Media.Current;
+        var media = App.ShownMedia;
         NowLine.Text = media is null ? Strings.Get("NothingPlaying") : $"{media.Title} · {media.Artist}";
         RefreshPreviews();
     }
@@ -827,7 +827,7 @@ public partial class MainWindow : Window
     private void RefreshPreviews()
     {
         // Nothing plays: an example, so that the style can still be set.
-        var media = App.Media.Current ?? new MediaSnapshot("", "", "", Strings.Get("NothingPlaying"), Strings.Get("NothingPlayingHint"), "",
+        var media = App.ShownMedia ?? new MediaSnapshot("", "", "", Strings.Get("NothingPlaying"), Strings.Get("NothingPlayingHint"), "",
             null, null, "", 0, null, false, TimeSpan.FromSeconds(44), DateTimeOffset.Now, TimeSpan.FromSeconds(214), 1, false, false, false, false);
         bool dark = App.TaskbarIsDark;
         if (_widgetPreview is not null && _widgetStrip is not null)
