@@ -181,7 +181,7 @@ The generated files are committed: run it again only to change the design.
 1. Update `<Version>` in `Directory.Build.props`.
 2. Commit, then create and push a tag: `git tag v0.1.0`, then `git push origin v0.1.0`.
 3. The GitHub Actions workflow builds, tests and publishes the installer in a Release.
-4. The Store version: `.\scriptsuild-store.ps1`, then a new submission in Partner Center with the new `.msix`.
+4. The Store version: `.\scripts\build-store.ps1`, then a new submission in Partner Center with the new `.msix`.
 
 ## Privacy policy
 

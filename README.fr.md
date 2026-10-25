@@ -190,7 +190,7 @@ tests vérifient que les deux ont les mêmes clés et les mêmes paramètres. Me
 1. Mettez à jour `<Version>` dans `Directory.Build.props`.
 2. Commitez, puis créez et poussez un tag : `git tag v0.1.0`, puis `git push origin v0.1.0`.
 3. Le workflow GitHub Actions compile, teste et publie l'installeur dans une Release.
-4. La version Store : `.\scriptsuild-store.ps1`, puis une nouvelle soumission dans le Partner Center avec le nouveau `.msix`.
+4. La version Store : `.\scripts\build-store.ps1`, puis une nouvelle soumission dans le Partner Center avec le nouveau `.msix`.
 
 ## Confidentialité
 

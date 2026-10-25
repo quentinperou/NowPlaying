@@ -44,7 +44,7 @@ the whole window once read 32 %: let the window rest before measuring.
 Remote `origin`: the public `github.com/quentinperou/NowPlaying`. A version goes out as `main`, then its tag alone
 (`git push origin vX.Y.Z`: the tags are lightweight, `--follow-tags` skips them); the tag's workflow publishes the
 release with the installer. The Store version goes out **by hand** (his choice, October 25, 2026: no upload from
-GitHub, which needs an Entra ID tenant and a key to renew): `scriptsuild-store.ps1`, then in Partner Center a new
+GitHub, which needs an Entra ID tenant and a key to renew): `scripts\build-store.ps1`, then in Partner Center a new
 submission (it copies the last one): the new `.msix`, the "What's new" of each listing, Submit.
 
 ## Project status (October 25, 2026)
