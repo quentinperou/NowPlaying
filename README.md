@@ -14,6 +14,10 @@
 </p>
 
 <p align="center">
+  <a href="https://apps.microsoft.com/detail/9N7FSJ3M6KGC?referrer=appbadge&mode=direct"><img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200" alt="Download from the Microsoft Store"></a>
+</p>
+
+<p align="center">
   <img src=".github/screenshot.png" width="900" alt="NowPlaying: the app window on its Taskbar page (the widget in the color of the cover), the two OBS overlays (a compact bar and a card) on a stream scene, and the widget in a Windows 11 taskbar">
 </p>
 
@@ -85,6 +89,10 @@
 - [x] The taskbars of the other screens, a history, the overlay on each new track.
 
 ## Installation
+
+From the **Microsoft Store**: [NowPlaying Widget](https://apps.microsoft.com/detail/9N7FSJ3M6KGC?referrer=appbadge&mode=direct), signed by Microsoft, updated by the Store.
+
+Or from GitHub:
 
 1. Download `NowPlaying-Setup-x.y.z.exe` from the [Releases](../../releases) page.
 2. Run it. As the installer is not signed, Windows SmartScreen may show “Windows protected your PC”:
@@ -173,6 +181,7 @@ The generated files are committed: run it again only to change the design.
 1. Update `<Version>` in `Directory.Build.props`.
 2. Commit, then create and push a tag: `git tag v0.1.0`, then `git push origin v0.1.0`.
 3. The GitHub Actions workflow builds, tests and publishes the installer in a Release.
+4. The Store version: `.\scriptsuild-store.ps1`, then a new submission in Partner Center with the new `.msix`.
 
 ## Privacy policy
 

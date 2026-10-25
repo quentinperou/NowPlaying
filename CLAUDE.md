@@ -43,11 +43,17 @@ the whole window once read 32 %: let the window rest before measuring.
 **no `Co-Authored-By` line**. **Never push** without his explicit OK: he pushes from his own PC.
 Remote `origin`: the public `github.com/quentinperou/NowPlaying`. A version goes out as `main`, then its tag alone
 (`git push origin vX.Y.Z`: the tags are lightweight, `--follow-tags` skips them); the tag's workflow publishes the
-release with the installer.
+release with the installer. The Store version goes out **by hand** (his choice, October 25, 2026: no upload from
+GitHub, which needs an Entra ID tenant and a key to renew): `scriptsuild-store.ps1`, then in Partner Center a new
+submission (it copies the last one): the new `.msix`, the "What's new" of each listing, Submit.
 
-## Project status (October 24, 2026)
+## Project status (October 25, 2026)
 
-**Microsoft Store version, in progress** (October 24, 2026, evening, home PC; commit `7aea3e1`, pushed; asked by him: steps
+**In the Microsoft Store since October 25, 2026** (morning): **NowPlaying Widget** 0.3.2.0, free, all markets,
+`https://apps.microsoft.com/detail/9N7FSJ3M6KGC`; submission 1, sent the night before, passed certification in a few
+hours and was published by itself. The listing is `store/listing.md`.
+
+**Microsoft Store version** (October 24, 2026, evening, home PC; commit `7aea3e1`, pushed; asked by him: steps
 1 and 2 of the plan in `.local/claude/memory/project-store-plan.md`): he made his Partner Center account and reserved
 **"NowPlaying by QuentinPerou"** (Store ID `9N7FSJ3M6KGC`), then also **"NowPlaying Widget"**, the name he kept for the Store
 (the package's `DisplayName`; the identity keeps the first name, the Start menu says "NowPlaying"). The same exe runs from a full MSIX package
@@ -482,10 +488,9 @@ English (default) and French, following the Windows display language or chosen i
 
 ## To do
 
-- [ ] Store version: the listing in Partner Center (ready in `store/listing.md`), then the first submission by
-      hand; later, maybe, the upload from GitHub
-      (plan, step 4). To check: the offer to uninstall the GitHub version (on the shop PC), the start at sign-in, the
-      widget in the board.
+- [ ] Store version (published October 25, 2026): install it from the Store on the shop PC and check the offer to
+      uninstall the GitHub version, the start at sign-in, the widget in the board; more screenshots for the listing
+      (Microsoft advises four).
 - [ ] The author tries 0.3.2 (installed on the shop PC): the Sources page with real players, the widget menus (and
       "Copy title – artist"), the click on the cover, the drag of the floating widget, OBS itself (the overlay on each
       new track, the text file), Spotify, a real live stream in the widget.

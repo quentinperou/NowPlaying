@@ -14,6 +14,10 @@
 </p>
 
 <p align="center">
+  <a href="https://apps.microsoft.com/detail/9N7FSJ3M6KGC?referrer=appbadge&mode=direct"><img src="https://get.microsoft.com/images/fr%20dark.svg" width="200" alt="Télécharger à partir du Microsoft Store"></a>
+</p>
+
+<p align="center">
   <img src=".github/screenshot.fr.png" width="900" alt="NowPlaying : la fenêtre de l'application sur sa page Barre des tâches (le widget à la couleur de la pochette), les deux overlays OBS (une barre compacte et une carte) sur une scène de stream, et le widget dans une barre des tâches Windows 11">
 </p>
 
@@ -91,6 +95,10 @@
 - [x] Les barres des tâches des autres écrans, un historique, l'overlay à chaque nouveau morceau.
 
 ## Installation
+
+Depuis le **Microsoft Store** : [NowPlaying Widget](https://apps.microsoft.com/detail/9N7FSJ3M6KGC?referrer=appbadge&mode=direct), signée par Microsoft, mise à jour par le Store.
+
+Ou depuis GitHub :
 
 1. Téléchargez `NowPlaying-Setup-x.y.z.exe` depuis la page [Releases](../../releases).
 2. Lancez-le. L'installeur n'étant pas signé, Windows SmartScreen peut afficher « Windows a protégé votre ordinateur » :
@@ -182,6 +190,7 @@ tests vérifient que les deux ont les mêmes clés et les mêmes paramètres. Me
 1. Mettez à jour `<Version>` dans `Directory.Build.props`.
 2. Commitez, puis créez et poussez un tag : `git tag v0.1.0`, puis `git push origin v0.1.0`.
 3. Le workflow GitHub Actions compile, teste et publie l'installeur dans une Release.
+4. La version Store : `.\scriptsuild-store.ps1`, puis une nouvelle soumission dans le Partner Center avec le nouveau `.msix`.
 
 ## Confidentialité
 
