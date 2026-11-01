@@ -69,8 +69,8 @@ unfolding on hover; "c'est bon".
 
 **Version 0.3.3** (November 1, 2026, asked by him: "fais la 0.3.3"; tag `v0.3.3` pushed, GitHub release made by the
 workflow; the Store package `dist\store\NowPlaying_0.3.3.0_x64.msix` built for him to submit by hand) fixes
-**issue #1** (opened October 31, 2026 by his shop account ConceptStorePhoto, still open: he was asked whether to
-answer and close it): the widget sat over the taskbar icons when they are aligned left (Start at the very edge, which the
+**issue #1** (opened October 31, 2026 by his shop account ConceptStorePhoto; answered in French, signed "Claude" as
+he asked, and closed on November 1 after 0.4.0): the widget sat over the taskbar icons when they are aligned left (Start at the very edge, which the
 "no room before Start" test skipped; the weather then goes next to the clock), and overflowed Windows' small taskbar
 (31 px at 100 %, the widget 40). Now: the alignment is read (`TaskbarAl`, `WindowsSettings.TaskbarIconsAlignedLeft`)
 and the widget goes near the clock, before the weather; in a taskbar lower than the widget it fits inside 2 px from
