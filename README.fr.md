@@ -24,8 +24,8 @@
 ---
 
 > **Début du développement.** La version 0.2 a ajouté un widget flottant et un widget pour le tableau Widgets de
-> Windows ; la 0.3 ajoute un historique et les barres des tâches des autres écrans. Aimer un morceau (Spotify) viendra
-> ensuite.
+> Windows ; la 0.3 un historique et les barres des tâches des autres écrans ; la 0.4 la barre des tâches verticale.
+> Aimer un morceau (Spotify) viendra ensuite.
 
 ## Fonctionnalités
 
@@ -42,6 +42,8 @@
 - À gauche, après la météo de Windows, ou à côté de l'horloge. Caché par-dessus les applications en plein écran,
   visible même menu Démarrer ouvert. Désactivez la météo de Windows (l'application ouvre la bonne page des
   paramètres) et le widget prend sa place.
+- Toutes les barres des tâches : la petite (titre et artiste sur une ligne), la verticale à gauche ou à droite (la
+  pochette seule, le widget se déplie par-dessus l'écran au survol).
 
 ### Plusieurs lecteurs
 

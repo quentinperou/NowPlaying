@@ -49,6 +49,24 @@ submission (it copies the last one): the new `.msix`, the "What's new" of each l
 
 ## Project status (November 1, 2026)
 
+**Version 0.4.0, the vertical taskbar** (November 1, 2026, after 0.3.3; asked by him: "il faudrait qu'on le rende
+compatible avec le mode vertical", then "c'est bon, fais la 0.4.0"; tag `v0.4.0` pushed, GitHub release made by the
+workflow, the Store package `dist\store\NowPlaying_0.4.0.0_x64.msix` built for him to submit by hand): Windows 11 now
+puts the taskbar left or right, where the widget hid.
+Now, his choices among the mock-ups of `.local/maquettes/barre-verticale.png`: the **cover alone** (40 px square,
+four small bars over its bottom while playing) in the column, at the top under the weather ("Left") or at the
+bottom above the clock ("Near the clock"); on hover or the wheel, **the widget unfolds over the screen** as it is on
+hover in a horizontal taskbar: times, progress, previous / play / next, or the volume (he first chose a strip with
+the title and a thin progress line, A, then, trying it on his real vertical taskbar: "je veux garder le même visuel
+du widget"), in nearly opaque colors (`SurfaceColors.Unfolded`: Glass as Windows' menus), to the right of a
+taskbar on the left, to the left of one on the right (mirrored, the cover at its right end). `TaskbarPlacement` works along the taskbar (x or y), tested both ways (125 tests); `WidgetView.SetVertical`,
+`IsUnfolded`, `UnfoldedChanged`; `TaskbarWidget` sizes its window itself (`SetWindowPos` with the size: the left edge
+moves as it widens on the right). Checked on his home PC with the Debug build and `NOWPLAYING_TASKBAR_SIDE=left|right`
+(his Store app quit for the test with his OK, then started again): the cover at 4,8 (40 × 40), unfolded 280 × 40 at
+the same place on the left, at 1636 on the right with its cover where it was (`.local/maquettes/barre-verticale-reelle.png`).
+Then he tried the Debug build on his real vertical taskbar (left): the cover under the weather, the widget
+unfolding on hover; "c'est bon".
+
 **Version 0.3.3** (November 1, 2026, asked by him: "fais la 0.3.3"; tag `v0.3.3` pushed, GitHub release made by the
 workflow; the Store package `dist\store\NowPlaying_0.3.3.0_x64.msix` built for him to submit by hand) fixes
 **issue #1** (opened October 31, 2026 by his shop account ConceptStorePhoto, still open: he was asked whether to
@@ -294,7 +312,8 @@ powershell -File scripts\make-icons.ps1   # regenerate the icons (Windows PowerS
 
 Environment variables: `NOWPLAYING_LANG=en|fr`, `NOWPLAYING_THEME=Light|Dark`, `NOWPLAYING_WIDGET_STATE=hover|volume`
 (the widget stays in that state: pictures, tests), `NOWPLAYING_TASKBAR_HEIGHT=31` (the widget laid out as in a taskbar
-that high: Windows' small one). Settings live in `%LOCALAPPDATA%\NowPlaying\settings.json`.
+that high: Windows' small one), `NOWPLAYING_TASKBAR_SIDE=left|right` (as on a 48 px vertical taskbar on that side of
+the screen, above the real one). Settings live in `%LOCALAPPDATA%\NowPlaying\settings.json`.
 
 The Store version in development: `Add-AppxPackage -Register dist\store\layout\AppxManifest.xml` (Developer Mode;
 quit any other NowPlaying first), started by `explorer shell:AppsFolder\QuentinPerou.NowPlayingbyQuentinPerou_fjkgknmb0dzkr!App`;
@@ -409,8 +428,10 @@ process matching), `SemanticVersion`, `UpdateFeed`. |
   Automation (`WidgetsButton`, `StartButton`), on a pool thread, again on `WM_SETTINGCHANGE` and when Explorer
   restarts. Left: after the weather; no room before Start, or icons aligned left (`TaskbarAl` = 0): near the clock,
   left of `TrayNotifyWnd` (still a real window with its rectangle on Windows 11) and of the weather, which goes there
-  then. Computed by `TaskbarPlacement` (Core, tested). In a taskbar lower than 44 px (Windows' small one) the widget
-  fits inside and shows title and artist on one line, as Windows' weather and clock do there.
+  then. Computed by `TaskbarPlacement` (Core, tested), along the taskbar: on a vertical one "Left" is the top and
+  "Near the clock" the bottom, and the widget is the cover alone, unfolding over the screen on hover. In a taskbar
+  lower than 44 px (Windows' small one) the widget fits inside and shows title and artist on one line, as Windows'
+  weather and clock do there.
 - **Volume of the app**: Core Audio sessions of the default output (NAudio), matched to the player by
   `AppIdentity.Matches` (exe name, Store package family, Firefox's hash). 2 % a notch.
 - **Spectrum**: the sound of the player shown only, by Windows' process loopback (`ProcessLoopback`: the virtual

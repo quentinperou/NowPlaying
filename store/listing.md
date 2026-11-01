@@ -44,6 +44,16 @@ No account, no sign-in. Play any media (YouTube in Edge, Spotify, Media Player):
 
 ## What's new (each submission, both listings)
 
+**0.4.0** (with the fixes of 0.3.3, in case 0.3.3 was not submitted)
+
+```
+The widget now works on a vertical taskbar, on the left or the right of the screen: the cover alone, and the widget unfolds over the screen on hover. It also fits Windows' small taskbar (title and artist on one line) and no longer covers the icons when they are aligned left.
+```
+
+```
+Le widget fonctionne maintenant avec une barre des tâches verticale, à gauche ou à droite de l'écran : la pochette seule, et le widget se déplie par-dessus l'écran au survol. Il tient aussi dans la petite barre des tâches de Windows (titre et artiste sur une ligne) et ne recouvre plus les icônes quand elles sont alignées à gauche.
+```
+
 **0.3.3**
 
 ```

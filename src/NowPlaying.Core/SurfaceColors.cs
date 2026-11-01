@@ -47,6 +47,21 @@ public readonly record struct SurfaceColors(Argb Background, Argb Text, Argb Sec
         return light ? OnLight(background) : OnDark(background, frosted: false);
     }
 
+    /// <summary>
+    /// The widget unfolded over the screen beside a vertical taskbar: over any window, so nearly opaque. Glass as the
+    /// menus of Windows, light or dark like the taskbar; the cover's or the user's color as they are, at 92 % at least.
+    /// </summary>
+    public static SurfaceColors Unfolded(SurfaceStyle style, Rgb? coverColor, bool onDarkTaskbar)
+    {
+        if (style.ColorMode == ColorMode.Glass)
+            return onDarkTaskbar ? OnDark(new Argb(250, new Rgb(44, 44, 44)), frosted: false) : OnLight(new Argb(250, new Rgb(249, 249, 249)));
+        var color = style.ColorMode == ColorMode.Cover
+            ? coverColor ?? new Rgb(58, 62, 84)
+            : Rgb.ParseOr(style.CustomColor, new Rgb(91, 108, 240));
+        var background = new Argb(Math.Max(Alpha(style.Opacity), (byte)235), color);
+        return color.IsLight ? OnLight(background) : OnDark(background, frosted: false);
+    }
+
     private static byte Alpha(int opacity) => (byte)Math.Round(Math.Clamp(opacity, 0, 100) * 2.55);
 
     /// <summary>A see-through color over another, as the screen shows them.</summary>

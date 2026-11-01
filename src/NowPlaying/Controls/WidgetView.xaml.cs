@@ -18,6 +18,7 @@ namespace NowPlaying.Controls;
 public partial class WidgetView : UserControl
 {
     private const int BarCount = 10;
+    private const int CoverBarCount = 4;
 
     // NOWPLAYING_WIDGET_STATE=hover|volume keeps the widget in that state (pictures of the README, tests: the
     // hover and the wheel need the real mouse).
@@ -25,6 +26,9 @@ public partial class WidgetView : UserControl
 
     private readonly BarsView _bars = new(BarCount, 3, 2, 3);
     private readonly float[] _barLevels = new float[BarCount];
+    // Over the cover alone, beside a vertical taskbar.
+    private readonly BarsView _coverBars = new(CoverBarCount, 3, 2, 2);
+    private readonly float[] _coverLevels = new float[CoverBarCount];
     private readonly DispatcherTimer _frameTimer = new(DispatcherPriority.Render) { Interval = TimeSpan.FromMilliseconds(40) };
     private readonly DispatcherTimer _progressTimer = new() { Interval = TimeSpan.FromMilliseconds(250) };
     private readonly DispatcherTimer _volumeTimer = new() { Interval = TimeSpan.FromMilliseconds(1500) };
@@ -36,12 +40,18 @@ public partial class WidgetView : UserControl
     private bool _hover;
     private bool _spectrumHeld;
     private bool _oneLine;
+    private bool _frosted;
+    private bool? _onTheRight;
+    private bool _unfolded;
+    private SurfaceColors? _unfoldedColors;
     private BitmapSource? _greyCover;
 
     public WidgetView()
     {
         InitializeComponent();
         BarsPanel.Child = _bars;
+        CoverBarsPanel.Child = _coverBars;
+        _coverBars.Fill = Frozen(new SolidColorBrush(Color.FromArgb(235, 255, 255, 255)));
         SizeChanged += (_, _) => ClipEdges();
         _frameTimer.Tick += (_, _) => PaintBars();
         _progressTimer.Tick += (_, _) => UpdateProgress();
@@ -99,39 +109,23 @@ public partial class WidgetView : UserControl
     /// </param>
     public void ApplyStyle(WidgetStyle style, SurfaceColors colors, double? frostedRadius = null)
     {
-        bool frosted = frostedRadius is not null;
+        _frosted = frostedRadius is not null;
         _style = style;
         _colors = colors;
 
-        Width = style.Width;
         Root.CornerRadius = new CornerRadius(frostedRadius ?? style.CornerRadius);
         CoverBox.CornerRadius = new CornerRadius(Math.Min(4, Math.Max(2, style.CornerRadius)));
-        Root.Background = frosted ? Gloss(colors.Background) : Brush(colors.Background);
-        Edges.Visibility = frosted ? Visibility.Visible : Visibility.Collapsed;
+        Edges.Visibility = _frosted ? Visibility.Visible : Visibility.Collapsed;
         if (frostedRadius is { } radius)
             ShapeEdges(radius);
-        var text = Brush(colors.Text);
-        var secondary = Brush(colors.SecondaryText);
-        var track = Brush(colors.Track);
-        Resources["WidgetHoverBrush"] = Brush(colors.Hover);
 
         FontFamily = new FontFamily(style.Font + ", Segoe UI");
         TitleText.FontSize = style.FontSize;
         ArtistText.FontSize = Math.Max(9, style.FontSize - 1);
-        TitleText.Foreground = text;
-        ArtistText.Foreground = secondary;
-        ElapsedText.Foreground = LengthText.Foreground = VolumeText.Foreground = VolumeIcon.Foreground = secondary;
-        LiveText.Foreground = text;
-        SeekBack.Background = VolumeBack.Background = track;
-        SeekFill.Background = VolumeFill.Background = text;
-        PreviousGlyph.Fill = PlayGlyph.Fill = NextGlyph.Fill = text;
-        _bars.Fill = secondary;
-        CoverPlaceholder(track);
+        PaintColors();
 
-        CoverBox.Visibility = style.ShowCover ? Visibility.Visible : Visibility.Collapsed;
+        CoverBox.Visibility = style.ShowCover || _onTheRight is not null ? Visibility.Visible : Visibility.Collapsed;
         CoverBox.Cursor = style.CoverOpensPlayer ? Cursors.Hand : null;
-        Root.Padding = new Thickness(style.ShowCover ? 4 : 10, 0, 8, 0);
-        ShowTexts();
         BarsPanel.Visibility = style.ShowVisualizer ? Visibility.Visible : Visibility.Collapsed;
         ElapsedText.Visibility = LengthText.Visibility = style.ShowTimes ? Visibility.Visible : Visibility.Collapsed;
         var controls = style.ShowControls ? Visibility.Visible : Visibility.Collapsed;
@@ -176,9 +170,72 @@ public partial class WidgetView : UserControl
         Height = height;
         _oneLine = oneLine;
         CoverBox.Width = CoverBox.Height = Math.Min(32, height - 6);
-        CoverBox.Margin = new Thickness(0, 0, oneLine ? 8 : 10, 0);
         BarsPanel.Height = Math.Min(22, height - 12);
         PreviousButton.Height = PlayButton.Height = NextButton.Height = Math.Min(28, height - 2);
+        ShowTexts();
+        UpdateState();
+    }
+
+    /// <summary>
+    /// On a vertical taskbar (Windows 11 puts it left or right): the cover alone at rest, unfolding on hover over the
+    /// screen into the widget as it is on hover in a horizontal taskbar, its progress and its controls (the author's
+    /// choices, November 1, 2026: `.local/maquettes/barre-verticale.png`, then "je veux garder le même visuel du
+    /// widget"). <paramref name="onTheRight"/>: null, a horizontal taskbar; true, a taskbar on the right: the widget
+    /// unfolds to the left, its cover at its right end.
+    /// </summary>
+    public void SetVertical(bool? onTheRight)
+    {
+        if (onTheRight == _onTheRight)
+            return;
+        _onTheRight = onTheRight;
+        bool mirror = onTheRight == true;
+        LeftColumn.Width = mirror ? new GridLength(1, GridUnitType.Star) : GridLength.Auto;
+        RightColumn.Width = mirror ? GridLength.Auto : new GridLength(1, GridUnitType.Star);
+        Grid.SetColumn(CoverBox, mirror ? 1 : 0);
+        Grid.SetColumn(RestPanel, mirror ? 0 : 1);
+        Grid.SetColumn(ControlPanel, mirror ? 0 : 1);
+        CoverBox.Visibility = _style.ShowCover || onTheRight is not null ? Visibility.Visible : Visibility.Collapsed;
+        UpdateState();
+    }
+
+    /// <summary>The colors of the strip unfolded beside a vertical taskbar, over any window.</summary>
+    public SurfaceColors? UnfoldedColors
+    {
+        set
+        {
+            _unfoldedColors = value;
+            if (_unfolded)
+                PaintColors();
+        }
+    }
+
+    /// <summary>Unfolded beside a vertical taskbar (hover, or the volume shown).</summary>
+    public bool IsUnfolded => _unfolded;
+
+    /// <summary>The widget unfolded or folded back beside a vertical taskbar: its window must follow.</summary>
+    public event EventHandler? UnfoldedChanged;
+
+    // The colors of the style; unfolded over the screen beside a vertical taskbar, its opaque ones.
+    private void PaintColors()
+    {
+        var colors = _unfolded && _unfoldedColors is { } over ? over : _colors;
+        var text = Brush(colors.Text);
+        var secondary = Brush(colors.SecondaryText);
+        var track = Brush(colors.Track);
+        Root.Background = _frosted ? Gloss(colors.Background) : Brush(colors.Background);
+        // Over a window, an edge as Windows' menus have.
+        Root.BorderBrush = _unfolded ? track : null;
+        Root.BorderThickness = new Thickness(_unfolded ? 1 : 0);
+        Resources["WidgetHoverBrush"] = Brush(colors.Hover);
+        TitleText.Foreground = text;
+        ArtistText.Foreground = secondary;
+        ElapsedText.Foreground = LengthText.Foreground = VolumeText.Foreground = VolumeIcon.Foreground = secondary;
+        LiveText.Foreground = text;
+        SeekBack.Background = VolumeBack.Background = track;
+        SeekFill.Background = VolumeFill.Background = text;
+        PreviousGlyph.Fill = PlayGlyph.Fill = NextGlyph.Fill = text;
+        _bars.Fill = secondary;
+        CoverPlaceholder(track);
         ShowTexts();
     }
 
@@ -218,21 +275,55 @@ public partial class WidgetView : UserControl
     private void UpdateState()
     {
         bool active = !_idle && _media is not null && (_hover || ShowsVolume || ForcedState == "hover");
-        RestPanel.Visibility = active ? Visibility.Collapsed : Visibility.Visible;
-        ControlPanel.Visibility = active ? Visibility.Visible : Visibility.Collapsed;
         // No length: a live stream if the position goes on, else a player that tells nothing (no progress then).
         var progress = Progress(_media);
-        SeekPanel.Visibility = !ShowsVolume && progress == ProgressKind.Track ? Visibility.Visible : Visibility.Collapsed;
-        LivePanel.Visibility = !ShowsVolume && progress == ProgressKind.Live ? Visibility.Visible : Visibility.Collapsed;
-        VolumePanel.Visibility = ShowsVolume ? Visibility.Visible : Visibility.Collapsed;
+        // The progress and the controls on hover (or the volume with the wheel), else the title, the artist and the bars.
+        // Beside a vertical taskbar: unfolded over the screen on hover, else the cover alone.
+        bool vertical = _onTheRight is not null;
+        SetUnfolded(vertical && active);
+        RestPanel.Visibility = Show(!active && !vertical);
+        ControlPanel.Visibility = Show(active);
+        SeekPanel.Visibility = Show(!ShowsVolume && progress == ProgressKind.Track);
+        LivePanel.Visibility = Show(!ShowsVolume && progress == ProgressKind.Live);
+        VolumePanel.Visibility = Show(ShowsVolume);
+        Width = vertical && !active ? Height : _style.Width;
+        if (vertical && !active)
+        {
+            double around = Math.Max(0, (Height - CoverBox.Width) / 2);
+            Root.Padding = new Thickness(around, 0, around, 0);
+            CoverBox.Margin = new Thickness(0);
+        }
+        else if (_onTheRight == true)
+        {
+            // Mirrored: the cover at the right end, by the taskbar.
+            Root.Padding = new Thickness(8, 0, 4, 0);
+            CoverBox.Margin = new Thickness(_oneLine ? 8 : 10, 0, 0, 0);
+        }
+        else
+        {
+            Root.Padding = new Thickness(_style.ShowCover || vertical ? 4 : 10, 0, 8, 0);
+            CoverBox.Margin = new Thickness(0, 0, _oneLine ? 8 : 10, 0);
+        }
         UpdateTimers();
+    }
+
+    private static Visibility Show(bool shown) => shown ? Visibility.Visible : Visibility.Collapsed;
+
+    private void SetUnfolded(bool unfolded)
+    {
+        if (unfolded == _unfolded)
+            return;
+        _unfolded = unfolded;
+        PaintColors();
+        UnfoldedChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void UpdateTimers()
     {
         bool seen = IsVisible;
-        bool rest = RestPanel.Visibility == Visibility.Visible;
+        bool rest = _onTheRight is null ? RestPanel.Visibility == Visibility.Visible : !_unfolded;
         bool bars = seen && rest && _style.ShowVisualizer && _media is { IsPlaying: true } && !_idle;
+        CoverBars.Visibility = Show(bars && _onTheRight is not null);
         // What the style asks now: it may be the window's own object, changed in place while the bars run (the
         // floating widget, the previews), so the spectrum is taken or given back here, not only when the bars start.
         HoldSpectrum(bars && _style.Visualizer == VisualizerMode.Spectrum && Spectrum is not null);
@@ -284,10 +375,26 @@ public partial class WidgetView : UserControl
         }
         else
             DecorativeBars.Fill(_barLevels, Environment.TickCount64 / 1000.0);
-        _bars.SetLevels(_barLevels);
+        if (_onTheRight is null)
+        {
+            _bars.SetLevels(_barLevels);
+            return;
+        }
+        for (int i = 0; i < CoverBarCount; i++)
+        {
+            float loudest = 0;
+            for (int k = i * BarCount / CoverBarCount; k < (i + 1) * BarCount / CoverBarCount; k++)
+                loudest = Math.Max(loudest, _barLevels[k]);
+            _coverLevels[i] = loudest;
+        }
+        _coverBars.SetLevels(_coverLevels);
     }
 
-    private void FlattenBars() => _bars.Flatten();
+    private void FlattenBars()
+    {
+        _bars.Flatten();
+        _coverBars.Flatten();
+    }
 
     /// <summary>What the progress shows (see <see cref="Timeline.Kind"/>).</summary>
     internal static ProgressKind Progress(MediaSnapshot? media) =>

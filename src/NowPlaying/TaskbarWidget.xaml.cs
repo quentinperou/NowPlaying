@@ -36,6 +36,8 @@ public partial class TaskbarWidget : Window
         _secondaryTray = secondaryTray;
         InitializeComponent();
         _autoHideTimer.Tick += (_, _) => Place();
+        // Beside a vertical taskbar the widget unfolds over the screen on hover: its window grows or shrinks.
+        View.UnfoldedChanged += (_, _) => Place();
     }
 
     /// <summary>The taskbar it sits on: the main one (found again after Explorer restarts), or that of another screen.</summary>
@@ -126,14 +128,18 @@ public partial class TaskbarWidget : Window
             return;
         }
         View.FitHeight(_fitHeight);
+        View.SetVertical(_onTheRight);
         if (!IsVisible)
             Show();
-        SetWindowPos(_hwnd, HWND_TOPMOST, x, y, 0, 0, SWP_NOSIZE | SWP_NOACTIVATE);
+        // Its size too: unfolding beside a taskbar on the right moves its left edge and widens it at once.
+        SetWindowPos(_hwnd, HWND_TOPMOST, x, y, _size.Width, _size.Height, SWP_NOACTIVATE);
         if (autoHide)
             _autoHideTimer.Start();
         else
             _autoHideTimer.Stop();
-        ReadBackdrop(x, y);
+        // Unfolded, it is over the screen: what is behind it is not the taskbar.
+        if (!View.IsUnfolded)
+            ReadBackdrop(x, y);
     }
 
     /// <summary>Raised when what is behind the widget turned from light to dark or back: its text color must follow.</summary>
@@ -163,6 +169,8 @@ public partial class TaskbarWidget : Window
     private int _barTop;
     private int _placeWidth;
     private double _fitHeight = WidgetStyle.Height;
+    private (int Width, int Height) _size;
+    private bool? _onTheRight;
 
     private bool TryGetPlace(out int x, out int y, out bool autoHide)
     {
@@ -171,38 +179,70 @@ public partial class TaskbarWidget : Window
         autoHide = (SHAppBarMessage(ABM_GETSTATE, ref abd).ToInt64() & ABS_AUTOHIDE) != 0;
 
         IntPtr tray = Tray;
-        if (tray == IntPtr.Zero || !IsWindow(tray) || !GetWindowRect(tray, out var bar) || bar.Width <= bar.Height)
-            return false; // no taskbar, or a vertical one (not on Windows 11)
+        if (tray == IntPtr.Zero || !IsWindow(tray) || !GetWindowRect(tray, out var rect))
+            return false;
 
         var monitor = new MONITORINFO { cbSize = Marshal.SizeOf<MONITORINFO>() };
         GetMonitorInfo(MonitorFromWindow(tray, MONITOR_DEFAULTTOPRIMARY), ref monitor);
+        var screen = monitor.rcMonitor;
+        double scale = GetDpiForWindow(tray) / 96.0;
+        int Px(double value) => (int)Math.Round(value * scale);
+        var bar = new TaskbarRect(rect.Left, rect.Top, rect.Width, rect.Height);
+        bool faked = false;
+        // Test hooks (pictures, tests: the taskbar's size and side are settings of the user): NOWPLAYING_TASKBAR_HEIGHT=31
+        // lays the widget out as in a taskbar that high, NOWPLAYING_TASKBAR_SIDE=left|right as on a 48 px vertical
+        // taskbar on that side of the screen, above the real one.
+        if (int.TryParse(Environment.GetEnvironmentVariable("NOWPLAYING_TASKBAR_HEIGHT"), out int forced) && forced > 0)
+            bar = bar with { Height = Px(forced) };
+        if (Environment.GetEnvironmentVariable("NOWPLAYING_TASKBAR_SIDE") is "left" or "right" && !bar.Vertical)
+        {
+            bool right = Environment.GetEnvironmentVariable("NOWPLAYING_TASKBAR_SIDE") == "right";
+            bar = new TaskbarRect(right ? screen.Right - Px(48) : screen.Left, screen.Top, Px(48), rect.Top - screen.Top);
+            faked = true;
+        }
+
         // An auto-hidden taskbar keeps a line or two of itself on screen.
-        int visible = Math.Min(bar.Bottom, monitor.rcMonitor.Bottom) - Math.Max(bar.Top, monitor.rcMonitor.Top);
-        if (visible < bar.Height - 4)
+        bool vertical = bar.Vertical;
+        int visible = vertical
+            ? Math.Min(bar.Right, screen.Right) - Math.Max(bar.Left, screen.Left)
+            : Math.Min(bar.Bottom, screen.Bottom) - Math.Max(bar.Top, screen.Top);
+        if (!faked && visible < (vertical ? bar.Width : bar.Height) - 4)
             return false;
 
-        double scale = GetDpiForWindow(tray) / 96.0;
-        // The notification area: Windows 11 still gives its rectangle (the taskbar of another screen has none).
-        IntPtr notify = FindWindowEx(tray, IntPtr.Zero, "TrayNotifyWnd", null);
-        int? notifyLeft = notify != IntPtr.Zero && GetWindowRect(notify, out var area) && area.Width > 0 ? area.Left : null;
-        // NOWPLAYING_TASKBAR_HEIGHT=31 lays the widget out as in a taskbar that high (pictures, tests: the small taskbar
-        // is a setting of the user).
-        int barHeight = int.TryParse(Environment.GetEnvironmentVariable("NOWPLAYING_TASKBAR_HEIGHT"), out int forced) && forced > 0
-            ? (int)Math.Round(forced * scale)
-            : bar.Height;
-        var place = TaskbarPlacement.Place(new TaskbarRect(bar.Left, bar.Top, bar.Width, barHeight), scale, WidgetStyle,
-            new TaskbarButtons(_widgets, _startLeft, notifyLeft, _clockLeft, _alignedLeft));
+        // What the taskbar holds, along it (x, or y on a vertical taskbar). The notification area: Windows 11 still
+        // gives its rectangle (the taskbar of another screen has none).
+        int Along(Edges edges) => vertical ? edges.Top : edges.Left;
+        IntPtr notify = faked ? IntPtr.Zero : FindWindowEx(tray, IntPtr.Zero, "TrayNotifyWnd", null);
+        int? notifyAt = notify != IntPtr.Zero && GetWindowRect(notify, out var area) && area.Width > 0 && area.Height > 0
+            ? (vertical ? area.Top : area.Left)
+            : null;
+        var buttons = faked
+            ? new TaskbarButtons()
+            : new TaskbarButtons(
+                _weather is { } weather ? (vertical ? (weather.Top, weather.Bottom) : (weather.Left, weather.Right)) : null,
+                _start is { } start ? Along(start) : null,
+                notifyAt,
+                _clock is { } clock ? Along(clock) : null,
+                _alignedLeft);
+        var place = TaskbarPlacement.Place(bar, scale, WidgetStyle, buttons);
         (x, y, _fitHeight) = place;
+        int height = Px(place.Height);
+        _onTheRight = vertical ? TaskbarPlacement.OnTheRight(bar, (screen.Left + screen.Right) / 2) : null;
+        // Beside a vertical taskbar: the cover alone (a square), or unfolded over the screen.
+        int width = !vertical || View.IsUnfolded ? Px(WidgetStyle.Width) : height;
+        if (_onTheRight is { } onTheRight && View.IsUnfolded)
+            x = TaskbarPlacement.UnfoldedLeft(onTheRight, x, height, width);
+        _size = (width, height);
         _barTop = bar.Top;
-        _placeWidth = (int)Math.Round(WidgetStyle.Width * scale);
+        _placeWidth = vertical ? height : width;
         return true;
     }
 
     // The Widgets button (weather) and the Start button of the taskbar, in pixels: drawn by Explorer without windows of
     // their own, found through UI Automation, away from the UI thread (Explorer may be slow to answer).
-    private (int Left, int Right)? _widgets;
-    private int? _startLeft;
-    private int? _clockLeft;
+    private Edges? _weather;
+    private Edges? _start;
+    private Edges? _clock;
     private bool _alignedLeft;
     private bool _lookingForButtons;
     private bool _buttonsKnown;
@@ -211,7 +251,7 @@ public partial class TaskbarWidget : Window
     /// Whether the weather of Windows (its Widgets button) is on the taskbar; null until looked for. Only the user can
     /// turn it off or on (Settings › Personalization › Taskbar): Windows protects that setting from the apps.
     /// </summary>
-    public bool? WindowsWeatherShown => _buttonsKnown ? _widgets is not null : null;
+    public bool? WindowsWeatherShown => _buttonsKnown ? _weather is not null : null;
 
     /// <summary>The weather of Windows appeared or went away.</summary>
     public event EventHandler? TaskbarButtonsChanged;
@@ -224,8 +264,7 @@ public partial class TaskbarWidget : Window
         _lookingForButtons = true;
         Task.Run(() =>
         {
-            (int Left, int Right)? widgets = null;
-            int? start = null, clock = null;
+            Edges? weather = null, start = null, clock = null;
             bool alignedLeft = WindowsSettings.TaskbarIconsAlignedLeft;
             try
             {
@@ -233,10 +272,10 @@ public partial class TaskbarWidget : Window
                 if (tray != IntPtr.Zero)
                 {
                     var root = System.Windows.Automation.AutomationElement.FromHandle(tray);
-                    widgets = Bounds(root, "WidgetsButton");
-                    start = Bounds(root, "StartButton")?.Left;
+                    weather = Bounds(root, "WidgetsButton");
+                    start = Bounds(root, "StartButton");
                     if (IsSecondary)
-                        clock = Bounds(root, "SystemTrayIcon")?.Left;
+                        clock = Bounds(root, "SystemTrayIcon");
                 }
             }
             catch (Exception ex) when (ex is System.Windows.Automation.ElementNotAvailableException or InvalidOperationException or COMException or ArgumentException)
@@ -245,10 +284,10 @@ public partial class TaskbarWidget : Window
             }
             Dispatcher.BeginInvoke(() =>
             {
-                bool changed = !_buttonsKnown || (_widgets is null) != (widgets is null);
-                _widgets = widgets;
-                _startLeft = start;
-                _clockLeft = clock;
+                bool changed = !_buttonsKnown || (_weather is null) != (weather is null);
+                _weather = weather;
+                _start = start;
+                _clock = clock;
                 _alignedLeft = alignedLeft;
                 _buttonsKnown = true;
                 _lookingForButtons = false;
@@ -259,7 +298,10 @@ public partial class TaskbarWidget : Window
         });
     }
 
-    private static (int Left, int Right)? Bounds(System.Windows.Automation.AutomationElement root, string automationId)
+    /// <summary>The edges of a button of the taskbar, in pixels of the screen.</summary>
+    private readonly record struct Edges(int Left, int Top, int Right, int Bottom);
+
+    private static Edges? Bounds(System.Windows.Automation.AutomationElement root, string automationId)
     {
         var element = root.FindFirst(System.Windows.Automation.TreeScope.Descendants,
             new System.Windows.Automation.PropertyCondition(System.Windows.Automation.AutomationElement.AutomationIdProperty, automationId));
@@ -268,7 +310,7 @@ public partial class TaskbarWidget : Window
         var bounds = element.Current.BoundingRectangle;
         if (bounds.IsEmpty || bounds.Width <= 0)
             return null;
-        return ((int)Math.Round(bounds.Left), (int)Math.Round(bounds.Right));
+        return new Edges((int)Math.Round(bounds.Left), (int)Math.Round(bounds.Top), (int)Math.Round(bounds.Right), (int)Math.Round(bounds.Bottom));
     }
 
     private void KeepOnTop()

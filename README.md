@@ -23,8 +23,8 @@
 
 ---
 
-> **Early development.** Version 0.2 added a floating widget and a widget for the Windows Widgets board; 0.3 adds a
-> history and the taskbars of the other screens. Liking a track (Spotify) will come next.
+> **Early development.** Version 0.2 added a floating widget and a widget for the Windows Widgets board; 0.3 a
+> history and the taskbars of the other screens; 0.4 the vertical taskbar. Liking a track (Spotify) will come next.
 
 ## Features
 
@@ -40,6 +40,8 @@
 - On the main screen or on every screen; a click on the cover can bring the player to the front.
 - On the left, after Windows' weather, or next to the clock. Hidden over full-screen apps, visible even while Start is
   open. Turn off Windows' weather (the app opens the right settings page) and the widget takes its place.
+- Every taskbar: a small one (title and artist on one line), a vertical one on the left or the right (the cover
+  alone, the widget unfolding over the screen on hover).
 
 ### Several players
 

@@ -244,8 +244,10 @@ internal sealed class TaskbarClient
         foreach (var widget in Widgets.ToList())
         {
             widget.WidgetStyle = style;
-            // Each one dark or light after its own taskbar.
-            widget.View.ApplyStyle(style, SurfaceColors.Resolve(style, media?.CoverColor, widget.BackdropIsDark ?? WindowsSettings.TaskbarIsDark, overlay: false));
+            // Each one dark or light after its own taskbar; beside a vertical one, unfolded over the screen, nearly opaque.
+            bool dark = widget.BackdropIsDark ?? WindowsSettings.TaskbarIsDark;
+            widget.View.UnfoldedColors = SurfaceColors.Unfolded(style, media?.CoverColor, dark);
+            widget.View.ApplyStyle(style, SurfaceColors.Resolve(style, media?.CoverColor, dark, overlay: false));
             widget.View.ShowMedia(media, state.Idle);
             widget.SetWanted(state.Wanted);
         }
