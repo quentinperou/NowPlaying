@@ -42,6 +42,18 @@ Desktop app (WPF, .NET) that shows what is playing in the taskbar. Full trust is
 No account, no sign-in. Play any media (YouTube in Edge, Spotify, Media Player): the widget shows the track in the taskbar; hover it for the controls, turn the mouse wheel for the volume of that app. The settings open from the Start menu (NowPlaying) or the notification area icon. The floating widget and the OBS overlay are off by default (Floating widget and OBS overlay pages).
 ```
 
+## What's new (each submission, both listings)
+
+**0.3.3**
+
+```
+The widget no longer covers the taskbar icons when they are aligned left: it goes next to the clock. In Windows' small taskbar it fits inside, with the title and the artist on one line.
+```
+
+```
+Le widget ne recouvre plus les icônes de la barre des tâches quand elles sont alignées à gauche : il se place près de l'horloge. Dans la petite barre des tâches de Windows, il tient dans la barre, avec le titre et l'artiste sur une ligne.
+```
+
 ## Store listing: English (en-us)
 
 **Description**

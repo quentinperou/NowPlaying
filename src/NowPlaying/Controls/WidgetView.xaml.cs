@@ -35,6 +35,7 @@ public partial class WidgetView : UserControl
     private bool _idle;
     private bool _hover;
     private bool _spectrumHeld;
+    private bool _oneLine;
     private BitmapSource? _greyCover;
 
     public WidgetView()
@@ -130,7 +131,7 @@ public partial class WidgetView : UserControl
         CoverBox.Visibility = style.ShowCover ? Visibility.Visible : Visibility.Collapsed;
         CoverBox.Cursor = style.CoverOpensPlayer ? Cursors.Hand : null;
         Root.Padding = new Thickness(style.ShowCover ? 4 : 10, 0, 8, 0);
-        ArtistText.Visibility = style.ShowArtist ? Visibility.Visible : Visibility.Collapsed;
+        ShowTexts();
         BarsPanel.Visibility = style.ShowVisualizer ? Visibility.Visible : Visibility.Collapsed;
         ElapsedText.Visibility = LengthText.Visibility = style.ShowTimes ? Visibility.Visible : Visibility.Collapsed;
         var controls = style.ShowControls ? Visibility.Visible : Visibility.Collapsed;
@@ -145,8 +146,7 @@ public partial class WidgetView : UserControl
             Dispatcher.BeginInvoke(() => VolumeWheel?.Invoke(this, 0)); // reads the volume to show
         _media = media;
         _idle = idle;
-        TitleText.Text = media?.Title ?? "";
-        ArtistText.Text = media?.Artist ?? "";
+        ShowTexts();
         LiveText.Text = Strings.Get("Live");
         if (coverChanged)
             _greyCover = null;
@@ -160,6 +160,38 @@ public partial class WidgetView : UserControl
         Opacity = idle ? 0.55 : 1;
         UpdateProgress();
         UpdateState();
+    }
+
+    /// <summary>
+    /// The height of the widget in the taskbar: 40 in a taskbar of the usual size, less in Windows' small taskbar
+    /// (31 px at 100 %, issue #1). There the title and the artist share one line, as Windows' own weather and clock
+    /// do (the author chose it among two looks, November 1, 2026: `.local/maquettes/petite-barre.png`).
+    /// </summary>
+    public void FitHeight(double height)
+    {
+        height = Math.Min(WidgetStyle.Height, Math.Round(height));
+        bool oneLine = height < 36;
+        if (height == Height && oneLine == _oneLine)
+            return;
+        Height = height;
+        _oneLine = oneLine;
+        CoverBox.Width = CoverBox.Height = Math.Min(32, height - 6);
+        CoverBox.Margin = new Thickness(0, 0, oneLine ? 8 : 10, 0);
+        BarsPanel.Height = Math.Min(22, height - 12);
+        PreviousButton.Height = PlayButton.Height = NextButton.Height = Math.Min(28, height - 2);
+        ShowTexts();
+    }
+
+    // The title and the artist: on two lines, or on one ("Title · Artist") in a small taskbar.
+    private void ShowTexts()
+    {
+        string artist = _media?.Artist ?? "";
+        TitleText.Inlines.Clear();
+        TitleText.Inlines.Add(new System.Windows.Documents.Run(_media?.Title ?? ""));
+        if (_oneLine && _style.ShowArtist && artist.Length > 0)
+            TitleText.Inlines.Add(new System.Windows.Documents.Run(" · " + artist) { FontWeight = FontWeights.Normal, Foreground = ArtistText.Foreground });
+        ArtistText.Text = artist;
+        ArtistText.Visibility = _style.ShowArtist && !_oneLine ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>Shows the volume of the app that plays for a moment (null: the player has no sound to set now).</summary>

@@ -8,6 +8,7 @@ internal static class WindowsSettings
     private const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string RunValue = "NowPlaying";
     private const string PersonalizeKey = @"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
+    private const string AdvancedKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced";
 
     /// <summary>Whether NowPlaying starts with Windows: the Run key, or the startup task of the Store version.</summary>
     public static Task<StartupState> GetStartupAsync() =>
@@ -56,6 +57,26 @@ internal static class WindowsSettings
         !AppPackage.IsPackaged
         && Environment.ProcessPath is { } exe
         && exe.StartsWith(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The icons of the taskbar are aligned left (Settings › Personalization › Taskbar › Taskbar behaviors): Start comes
+    /// first, at the edge, and the weather goes next to the clock. Centered by default (no value).
+    /// </summary>
+    public static bool TaskbarIconsAlignedLeft
+    {
+        get
+        {
+            try
+            {
+                using var key = Registry.CurrentUser.OpenSubKey(AdvancedKey);
+                return key?.GetValue("TaskbarAl") is int alignment && alignment == 0;
+            }
+            catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException)
+            {
+                return false;
+            }
+        }
+    }
 
     /// <summary>The taskbar (and Start) is dark: "Choose your mode" of Windows, the Windows part (dark by default).</summary>
     public static bool TaskbarIsDark

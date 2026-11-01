@@ -47,7 +47,23 @@ release with the installer. The Store version goes out **by hand** (his choice, 
 GitHub, which needs an Entra ID tenant and a key to renew): `scripts\build-store.ps1`, then in Partner Center a new
 submission (it copies the last one): the new `.msix`, the "What's new" of each listing, Submit.
 
-## Project status (October 25, 2026)
+## Project status (November 1, 2026)
+
+**Version 0.3.3** (November 1, 2026, asked by him: "fais la 0.3.3"; tag `v0.3.3` pushed, GitHub release made by the
+workflow; the Store package `dist\store\NowPlaying_0.3.3.0_x64.msix` built for him to submit by hand) fixes
+**issue #1** (opened October 31, 2026 by his shop account ConceptStorePhoto, still open: he was asked whether to
+answer and close it): the widget sat over the taskbar icons when they are aligned left (Start at the very edge, which the
+"no room before Start" test skipped; the weather then goes next to the clock), and overflowed Windows' small taskbar
+(31 px at 100 %, the widget 40). Now: the alignment is read (`TaskbarAl`, `WindowsSettings.TaskbarIconsAlignedLeft`)
+and the widget goes near the clock, before the weather; in a taskbar lower than the widget it fits inside 2 px from
+its edges and shows "Title · Artist" on one line (`WidgetView.FitHeight`; he chose it among two looks,
+`.local/maquettes/petite-barre.png`). The placement is pure and tested (`TaskbarPlacement` in Core, 11 tests, 119 in
+all). Windows keeps a window at least 39 px high and WPF caches that minimum: `TaskbarWidget` answers
+`WM_GETMINMAXINFO`. Checked on his home PC with the Debug build (his Store app quit for the test, then started
+again): `NOWPLAYING_TASKBAR_HEIGHT=31` gives a 27 px widget on one line, at rest and on hover, 40 px otherwise. Not
+checked: a real left-aligned or small taskbar (his settings were not changed). A vertical taskbar (Windows now offers
+left and right) still hides the widget: he asked the same day for a vertical mode (the cover alone, unfolding over
+the screen on hover), next after 0.3.3.
 
 **In the Microsoft Store since October 25, 2026** (morning): **NowPlaying Widget** 0.3.2.0, free, all markets,
 `https://apps.microsoft.com/detail/9N7FSJ3M6KGC`; submission 1, sent the night before, passed certification in a few
@@ -277,7 +293,8 @@ powershell -File scripts\make-icons.ps1   # regenerate the icons (Windows PowerS
 ```
 
 Environment variables: `NOWPLAYING_LANG=en|fr`, `NOWPLAYING_THEME=Light|Dark`, `NOWPLAYING_WIDGET_STATE=hover|volume`
-(the widget stays in that state: pictures, tests). Settings live in `%LOCALAPPDATA%\NowPlaying\settings.json`.
+(the widget stays in that state: pictures, tests), `NOWPLAYING_TASKBAR_HEIGHT=31` (the widget laid out as in a taskbar
+that high: Windows' small one). Settings live in `%LOCALAPPDATA%\NowPlaying\settings.json`.
 
 The Store version in development: `Add-AppxPackage -Register dist\store\layout\AppxManifest.xml` (Developer Mode;
 quit any other NowPlaying first), started by `explorer shell:AppsFolder\QuentinPerou.NowPlayingbyQuentinPerou_fjkgknmb0dzkr!App`;
@@ -330,7 +347,8 @@ one would show the desktop behind it) and the widget on a Windows 11 taskbar. Ma
 
 | Folder | Role |
 |--------|------|
-| `src/NowPlaying.Core` | Pure, tested logic: `SourcePicker` (which player to show, the rules of the Sources page), `PlayHistory` (the tracks heard), `TrackText` (a track as one line), `Timeline` (position between reports, "3:34"), `DominantColor` (color of a cover, readable under white text), `SpectrumAnalyzer` (Hann + FFT + log bands + smoothing) and `DecorativeBars`, `Styles` (`WidgetStyle`, `OverlayStyle`, enums, ranges), `SurfaceColors` (background / text / track from a style), `Rgb`, `AppIdentity` (player names, process matching), `SemanticVersion`, `UpdateFeed`. |
+| `src/NowPlaying.Core` | Pure, tested logic: `SourcePicker` (which player to show, the rules of the Sources page), `PlayHistory` (the tracks heard), `TrackText` (a track as one line), `Timeline` (position between reports, "3:34"), `DominantColor` (color of a cover, readable under white text), `SpectrumAnalyzer` (Hann + FFT + log bands + smoothing) and `DecorativeBars`, `Styles` (`WidgetStyle`, `OverlayStyle`, enums, ranges), `SurfaceColors` (background / text / track from a style), `Rgb`, `TaskbarPlacement` (where the widget goes on the taskbar, its height there), `AppIdentity` (player names,
+process matching), `SemanticVersion`, `UpdateFeed`. |
 | `src/NowPlaying` | WPF .NET 10. `App` (single instance, tray, widgets, overlay, commands; `--taskbar`: the widget process), `TaskbarWidget` (the window over the taskbar, in the widget process), `FloatingWidget` + `FloatingGlass` (its blur) + `FloatingShadow`, `MainWindow` (pages built in code), `PopupMenu` + `Menus.xaml` (tray and widget menus), `UpdateBar`, `Localization.cs`; `Controls/`: `WidgetView` (the widget, also the previews), `BarsView`, `OverlayPreview`, `StyleEditor`, `Ui` (cards, `Segmented`); `Services/`: `MediaSessions`, `AppNames`, `AppVolume`, `PlayerWindow`, `HistoryStore`, `TrackFile`, `AudioSpectrum`, `OverlayServer`, `TaskbarHost` (app side) + `TaskbarClient` (widget process) + `TaskbarLink` (`LineChannel`, the messages), `SeeThrough`, `TrayHost`, `AppSettings`, `WindowsSettings`, `AppPackage` (the Store version), `SingleInstance`, `MicaBackdrop`, `MemoryTrim`, `Updater`, `NativeMethods`; `Overlay/`: the overlay page (HTML, CSS, JS, embedded). |
 | `src/NowPlaying.Widgets` | The widget of the Windows Widgets board: a COM server (`Program`, `ClassFactory`, `WidgetProvider`) that Windows starts while the widget is on the board; `AppLink` (what plays from the app's local server, its buttons back), `Card` (Adaptive Card template and data), `Artwork` (the pictures: blurred background, rounded cover, icons). `package/`: the sparse package (manifest, logos, picker previews). Windows App SDK widgets component, self-contained. |
 | `tests/NowPlaying.Tests` | xUnit: Core, update feed, localization key parity. |
@@ -389,8 +407,10 @@ one would show the desktop behind it) and the widget on a Windows 11 taskbar. Ma
   its color or veil over that mean color (`SurfaceColors.Seen`).
 - **Its place**: the Widgets (weather) and Start buttons are drawn by Explorer without windows: found by UI
   Automation (`WidgetsButton`, `StartButton`), on a pool thread, again on `WM_SETTINGCHANGE` and when Explorer
-  restarts. Left: after the weather; no room before Start (or icons aligned left): near the clock, left of
-  `TrayNotifyWnd` (still a real window with its rectangle on Windows 11).
+  restarts. Left: after the weather; no room before Start, or icons aligned left (`TaskbarAl` = 0): near the clock,
+  left of `TrayNotifyWnd` (still a real window with its rectangle on Windows 11) and of the weather, which goes there
+  then. Computed by `TaskbarPlacement` (Core, tested). In a taskbar lower than 44 px (Windows' small one) the widget
+  fits inside and shows title and artist on one line, as Windows' weather and clock do there.
 - **Volume of the app**: Core Audio sessions of the default output (NAudio), matched to the player by
   `AppIdentity.Matches` (exe name, Store package family, Firefox's hash). 2 % a notch.
 - **Spectrum**: the sound of the player shown only, by Windows' process loopback (`ProcessLoopback`: the virtual
@@ -482,6 +502,10 @@ English (default) and French, following the Windows display language or chosen i
   Windows starts (the widget provider) is an extension of the one application, its own `Executable`.
 - The certification kit cannot install an unsigned MSIX: register `dist\store\layout` first, then
   `appcert.exe test -packagefullname <full name> -reportoutputpath <xml>` in an administrator prompt.
+- Windows keeps an overlapped window at least `SM_CYMINTRACK` high (39 px at 100 %), and WPF caches that minimum from
+  the first `WM_GETMINMAXINFO`: a lower window needs a hook that writes `ptMinTrackSize` without handling the message
+  (WPF reads it after), then a size change to ask again (`TaskbarWidget.OnSourceInitialized`). `WS_POPUP` alone does
+  not help.
 - `makepri createconfig` puts each scale in a PRI file of its own (`<packaging>`, meant for a bundle): in a single
   MSIX the scale-200 logos would be lost; `build-store.ps1` removes that section. Run makepri from PowerShell: Git
   Bash turns its `/cf` options into paths.

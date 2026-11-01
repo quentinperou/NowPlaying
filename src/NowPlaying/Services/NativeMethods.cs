@@ -14,6 +14,7 @@ internal static class NativeMethods
     public const int WM_SETTINGCHANGE = 0x001A;
     public const int WM_DISPLAYCHANGE = 0x007E;
     public const int WM_MOUSEACTIVATE = 0x0021;
+    public const int WM_GETMINMAXINFO = 0x0024;
     public const int WM_CONTEXTMENU = 0x007B;
     public const int WM_APP = 0x8000;
     public const int NIN_SELECT = 0x0400;
