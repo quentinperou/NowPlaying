@@ -132,7 +132,7 @@ public partial class TaskbarWidget : Window
         if (!IsVisible)
             Show();
         // Its size too: unfolding beside a taskbar on the right moves its left edge and widens it at once.
-        SetWindowPos(_hwnd, HWND_TOPMOST, x, y, _size.Width, _size.Height, SWP_NOACTIVATE);
+        SetWindowPos(_hwnd, HWND_TOPMOST, x, y, _size.Width, _size.Height, SWP_NOACTIVATE | SWP_NOOWNERZORDER);
         if (autoHide)
             _autoHideTimer.Start();
         else
@@ -313,16 +313,19 @@ public partial class TaskbarWidget : Window
         return new Edges((int)Math.Round(bounds.Left), (int)Math.Round(bounds.Top), (int)Math.Round(bounds.Right), (int)Math.Round(bounds.Bottom));
     }
 
+    // Raised alone (SWP_NOOWNERZORDER): raised with it, the taskbar it belongs to came over the menus of the other apps,
+    // a tray icon's right-click menu among them (November 9, 2026; LocalBell had the same, fixed the same way).
     private void KeepOnTop()
     {
         if (!IsVisible)
             return;
-        SetWindowPos(_hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+        const int Flags = SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER;
+        SetWindowPos(_hwnd, HWND_TOPMOST, 0, 0, 0, 0, Flags);
         // The taskbar may raise itself once more right after: again when the UI is idle.
         Dispatcher.BeginInvoke(() =>
         {
             if (IsVisible)
-                SetWindowPos(_hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+                SetWindowPos(_hwnd, HWND_TOPMOST, 0, 0, 0, 0, Flags);
         }, DispatcherPriority.ApplicationIdle);
     }
 

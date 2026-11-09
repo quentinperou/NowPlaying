@@ -47,11 +47,23 @@ release with the installer. The Store version goes out **by hand** (his choice, 
 GitHub, which needs an Entra ID tenant and a key to renew): `scripts\build-store.ps1`, then in Partner Center a new
 submission (it copies the last one): the new `.msix`, the "What's new" of each listing, Submit.
 
-## Project status (November 1, 2026)
+## Project status (November 9, 2026)
+
+**Version 0.4.1, menus behind the taskbar** (November 9, 2026, found by him; "fais la 0.4.1": tag `v0.4.1` pushed,
+GitHub release made by the workflow, the Store package `dist\store\NowPlaying_0.4.1.0_x64.msix` built for him to
+submit by hand): with the widget
+shown, the right-click menus of some tray icons (the "safely remove" one) went behind the taskbar. The widget,
+raised at each change of the window in front (`KeepOnTop`) and at each place, took the taskbar it belongs to over
+them; it is raised alone now (`SWP_NOOWNERZORDER`), as LocalBell 0.1.6 does (`G:\LocalBell`, same bug, same fix).
+Checked on his home PC (`scratchpad` script: a topmost window laid over the taskbar, the window in front changed
+six times, `WindowFromPoint`): nothing running, the window on top 6 times out of 6; the Store's 0.4.0, the taskbar
+over it 6 times; the fix, the window on top 6 times. The Store had already installed 0.4.0 (certified). The test
+track of the fake player and its player were taken out of his Store app's history and Sources afterwards.
 
 **Version 0.4.0, the vertical taskbar** (November 1, 2026, after 0.3.3; asked by him: "il faudrait qu'on le rende
 compatible avec le mode vertical", then "c'est bon, fais la 0.4.0"; tag `v0.4.0` pushed, GitHub release made by the
-workflow, the Store package `dist\store\NowPlaying_0.4.0.0_x64.msix` built for him to submit by hand): Windows 11 now
+workflow; the Store package `dist\store\NowPlaying_0.4.0.0_x64.msix` **submitted by him the same evening**, submission 2
+in Partner Center, 0.3.2.0 replaced, 0.3.3 never submitted on its own): Windows 11 now
 puts the taskbar left or right, where the widget hid.
 Now, his choices among the mock-ups of `.local/maquettes/barre-verticale.png`: the **cover alone** (40 px square,
 four small bars over its bottom while playing) in the column, at the top under the weather ("Left") or at the
@@ -527,13 +539,19 @@ English (default) and French, following the Windows display language or chosen i
   the first `WM_GETMINMAXINFO`: a lower window needs a hook that writes `ptMinTrackSize` without handling the message
   (WPF reads it after), then a size change to ask again (`TaskbarWidget.OnSourceInitialized`). `WS_POPUP` alone does
   not help.
+- An owned window raised to the top brings its owner along: the taskbar widget raised with `SetWindowPos` took the
+  taskbar over the other apps' menus. Raise it with `SWP_NOOWNERZORDER`.
+- A test with the fake player while the author's app runs (or wakes it) leaves the track in that app's history and
+  the player in its Sources list: take them out after (the Store app keeps them in
+  `%LOCALAPPDATA%\Packages\<family>\LocalCache\Local\NowPlaying`).
 - `makepri createconfig` puts each scale in a PRI file of its own (`<packaging>`, meant for a bundle): in a single
   MSIX the scale-200 logos would be lost; `build-store.ps1` removes that section. Run makepri from PowerShell: Git
   Bash turns its `/cf` options into paths.
 
 ## To do
 
-- [ ] Store version (published October 25, 2026): install it from the Store on the shop PC and check the offer to
+- [ ] Store version (published October 25, 2026; 0.4.0.0 submitted November 1, waiting for certification): install it
+      from the Store on the shop PC and check the offer to
       uninstall the GitHub version, the start at sign-in, the widget in the board; more screenshots for the listing
       (Microsoft advises four).
 - [ ] The author tries 0.3.2 (installed on the shop PC): the Sources page with real players, the widget menus (and

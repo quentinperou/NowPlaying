@@ -161,6 +161,7 @@ internal static class NativeMethods
     public const int SWP_NOMOVE = 0x0002;
     public const int SWP_NOZORDER = 0x0004;
     public const int SWP_NOACTIVATE = 0x0010;
+    public const int SWP_NOOWNERZORDER = 0x0200; // the owner stays where it is in the z-order
     public const int SWP_SHOWWINDOW = 0x0040;
 
     [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]

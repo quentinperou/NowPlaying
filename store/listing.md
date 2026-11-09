@@ -44,6 +44,16 @@ No account, no sign-in. Play any media (YouTube in Edge, Spotify, Media Player):
 
 ## What's new (each submission, both listings)
 
+**0.4.1**
+
+```
+The right-click menus of other apps' icons near the clock no longer go behind the taskbar while the widget is shown.
+```
+
+```
+Les menus du clic droit sur les icônes des autres applications, près de l'horloge, ne passent plus derrière la barre des tâches quand le widget est affiché.
+```
+
 **0.4.0** (with the fixes of 0.3.3, in case 0.3.3 was not submitted)
 
 ```
