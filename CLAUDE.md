@@ -47,11 +47,25 @@ release with the installer. The Store version goes out **by hand** (his choice, 
 GitHub, which needs an Entra ID tenant and a key to renew): `scripts\build-store.ps1`, then in Partner Center a new
 submission (it copies the last one): the new `.msix`, the "What's new" of each listing, Submit.
 
-## Project status (November 9, 2026)
+## Project status (November 16, 2026)
+
+**Version 0.4.2, icons aligned left, seen again** (November 16, 2026, found by him with the Store's 0.4.1; "fais la
+0.4.2": tag `v0.4.2` pushed, GitHub release made by the workflow, the Store package
+`dist\store\NowPlaying_0.4.2.0_x64.msix` built for him to submit by hand): with the icons aligned left the widget still sat over them. The fix of 0.3.3 placed it right once
+the alignment was known, but the Store version never learned of the change: in its package the watch of
+`Explorer\Advanced` did not fire and its reading of `TaskbarAl` goes through the package's own copy of the user's
+registry (seen with `Invoke-CommandInDesktopPackage`: a value added outside was not seen inside). Now the widget
+process checks, at each ping of the app (once a second), the rectangles of two old windows of the taskbar that
+Explorer still moves with its buttons, `Start` (where the Start button is) and `TrayNotifyWnd`; when they change it
+looks for the buttons again (`TaskbarWidget.CheckTaskbarLayout`), and `Start`'s rectangle is the Start position used
+(fresher than UI Automation). `TaskbarAl` is read only outside a package. Checked on his home PC with the Debug
+build and his real taskbar (his Store app quit for the test with his OK, then started again): icons to the left,
+Start at x 0 and the widget at x 1158 (before the weather) a second later; back to the center, the widget at 166
+a second later; "c'est bon, le widget suit".
 
 **Version 0.4.1, menus behind the taskbar** (November 9, 2026, found by him; "fais la 0.4.1": tag `v0.4.1` pushed,
-GitHub release made by the workflow, the Store package `dist\store\NowPlaying_0.4.1.0_x64.msix` built for him to
-submit by hand): with the widget
+GitHub release made by the workflow; the Store package `dist\store\NowPlaying_0.4.1.0_x64.msix` **submitted by him the
+same day**, submission 3, its "What's new" replacing those of 0.4.0): with the widget
 shown, the right-click menus of some tray icons (the "safely remove" one) went behind the taskbar. The widget,
 raised at each change of the window in front (`KeepOnTop`) and at each place, took the taskbar it belongs to over
 them; it is raised alone now (`SWP_NOOWNERZORDER`), as LocalBell 0.1.6 does (`G:\LocalBell`, same bug, same fix).
@@ -539,6 +553,11 @@ English (default) and French, following the Windows display language or chosen i
   the first `WM_GETMINMAXINFO`: a lower window needs a hook that writes `ptMinTrackSize` without handling the message
   (WPF reads it after), then a size change to ask again (`TaskbarWidget.OnSourceInitialized`). `WS_POPUP` alone does
   not help.
+- A packaged app reads the user's registry through the package's own copy: a value changed outside after it was
+  made is not seen, and `RegNotifyChangeKeyValue` does not fire for it (the Store version missed the icons aligned
+  left). Follow the taskbar itself: its old child windows `Start`, `ReBarWindow32` / `MSTaskSwWClass` and
+  `TrayNotifyWnd` still have the rectangles of the buttons. `Invoke-CommandInDesktopPackage` runs a process inside
+  the installed package to see what it sees.
 - An owned window raised to the top brings its owner along: the taskbar widget raised with `SetWindowPos` took the
   taskbar over the other apps' menus. Raise it with `SWP_NOOWNERZORDER`.
 - A test with the fake player while the author's app runs (or wakes it) leaves the track in that app's history and
@@ -550,7 +569,8 @@ English (default) and French, following the Windows display language or chosen i
 
 ## To do
 
-- [ ] Store version (published October 25, 2026; 0.4.0.0 submitted November 1, waiting for certification): install it
+- [ ] Store version (published October 25, 2026; 0.4.0.0 certified and installed by the Store on his home PC by
+      November 9; 0.4.1.0 submitted November 9, waiting for certification): install it
       from the Store on the shop PC and check the offer to
       uninstall the GitHub version, the start at sign-in, the widget in the board; more screenshots for the listing
       (Microsoft advises four).

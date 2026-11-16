@@ -207,6 +207,9 @@ internal sealed class TaskbarClient
             {
                 case "ping":
                     _channel.Send("pong");
+                    // Once a second anyway: whether a taskbar laid its buttons out again (two rectangles read).
+                    foreach (var widget in Widgets)
+                        widget.CheckTaskbarLayout();
                     break;
                 case "cover":
                     if (JsonSerializer.Deserialize<TaskbarCover>(payload) is { } cover)

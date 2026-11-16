@@ -44,6 +44,16 @@ No account, no sign-in. Play any media (YouTube in Edge, Spotify, Media Player):
 
 ## What's new (each submission, both listings)
 
+**0.4.2**
+
+```
+When the taskbar icons are aligned left, the widget now moves next to the clock at once, instead of covering them.
+```
+
+```
+Quand les icônes de la barre des tâches sont alignées à gauche, le widget se place maintenant tout de suite près de l'horloge, au lieu de les recouvrir.
+```
+
 **0.4.1**
 
 ```

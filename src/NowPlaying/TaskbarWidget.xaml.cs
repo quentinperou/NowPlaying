@@ -220,7 +220,7 @@ public partial class TaskbarWidget : Window
             ? new TaskbarButtons()
             : new TaskbarButtons(
                 _weather is { } weather ? (vertical ? (weather.Top, weather.Bottom) : (weather.Left, weather.Right)) : null,
-                _start is { } start ? Along(start) : null,
+                (ChildEdges(tray, "Start") ?? _start) is { } start ? Along(start) : null,
                 notifyAt,
                 _clock is { } clock ? Along(clock) : null,
                 _alignedLeft);
@@ -256,6 +256,39 @@ public partial class TaskbarWidget : Window
     /// <summary>The weather of Windows appeared or went away.</summary>
     public event EventHandler? TaskbarButtonsChanged;
 
+    // The old windows of the taskbar that Explorer still moves with its buttons: "Start" (where the Start button is,
+    // after the alignment of the icons) and the notification area. Their edges, as last read.
+    private (Edges? Start, Edges? Notify)? _layout;
+
+    /// <summary>
+    /// Called once a second (with the app's ping): whether the taskbar laid its buttons out again (icons aligned left
+    /// or centered, a wider notification area), and then where they are now. Two rectangles read, nothing more. The
+    /// Store version needs it: in its package it missed the icons aligned left in Settings, its registry watch and
+    /// its reading of the setting going through the package's own copy (issue #1 seen again on November 16, 2026).
+    /// </summary>
+    public void CheckTaskbarLayout()
+    {
+        IntPtr tray = Tray;
+        if (tray == IntPtr.Zero)
+            return;
+        var layout = (ChildEdges(tray, "Start"), ChildEdges(tray, "TrayNotifyWnd"));
+        if (_layout == layout)
+            return;
+        bool first = _layout is null;
+        _layout = layout;
+        // While the icons slide, the next pings see them move on and look again.
+        if (!first)
+            FindTaskbarButtons();
+    }
+
+    private static Edges? ChildEdges(IntPtr tray, string className)
+    {
+        IntPtr child = FindWindowEx(tray, IntPtr.Zero, className, null);
+        return child != IntPtr.Zero && GetWindowRect(child, out var r) && r.Width > 0 && r.Height > 0
+            ? new Edges(r.Left, r.Top, r.Right, r.Bottom)
+            : null;
+    }
+
     /// <summary>Looks again where the buttons of the taskbar are (taskbar settings, screen, Explorer restarted).</summary>
     public void FindTaskbarButtons()
     {
@@ -265,7 +298,9 @@ public partial class TaskbarWidget : Window
         Task.Run(() =>
         {
             Edges? weather = null, start = null, clock = null;
-            bool alignedLeft = WindowsSettings.TaskbarIconsAlignedLeft;
+            // Not in the Store version: a package reads its own copy of the user's settings, which may be old; there the
+            // place of Start tells it (TryGetPlace).
+            bool alignedLeft = !AppPackage.IsPackaged && WindowsSettings.TaskbarIconsAlignedLeft;
             try
             {
                 IntPtr tray = Tray;
